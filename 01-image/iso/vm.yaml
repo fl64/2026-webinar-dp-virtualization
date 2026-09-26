@@ -1,0 +1,33 @@
+# Blank disk: no dataSource, the installer partitions it.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualDisk
+metadata:
+  name: demo-iso-root
+  namespace: demo-webinar
+spec:
+  persistentVolumeClaim:
+    size: 4Gi
+---
+# Order of blockDeviceRefs is the boot order: CD first, then the blank disk.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachine
+metadata:
+  name: demo-iso
+  namespace: demo-webinar
+  labels:
+    vm: demo-iso
+spec:
+  virtualMachineClassName: generic
+  runPolicy: Manual
+  bootloader: EFI
+  cpu:
+    cores: 2
+    coreFraction: 10%
+  # 2Gi is what the live-server installer asks for; less and it drops to the recovery shell.
+  memory:
+    size: 2Gi
+  blockDeviceRefs:
+    - kind: ClusterVirtualImage
+      name: demo-ubuntu-26-04-iso
+    - kind: VirtualDisk
+      name: demo-iso-root

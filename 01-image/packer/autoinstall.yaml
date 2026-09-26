@@ -1,0 +1,76 @@
+#cloud-config
+autoinstall:
+  version: 1
+  interactive-sections: []
+  refresh-installer:
+    update: false
+  # The smallest set subiquity offers; the kernel meta for virtual machines, without headers.
+  source:
+    id: ubuntu-server-minimal
+  kernel:
+    package: linux-image-virtual
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  apt:
+    geoip: false
+    # The source already carries the ISO kernel with linux-generic, headers and tools. With the
+    # updates pocket on, any kernel package upgrades that whole set to the newer version, and two
+    # kernels with headers do not fit on the build disk. The pockets are back in late-commands.
+    disable_suites: [updates, backports, security]
+    primary:
+      - arches: [default]
+        uri: http://mirror.yandex.ru/ubuntu
+  identity:
+    hostname: packer-build
+    username: {{ .SSHUsername }}
+    password: "$6$rounds=4096$saltsalt$0MJmZDMWXW7Qm4TNRpSOlHZFTLWi8UtXwK/lHPjIHDdEMlfqOxCXY6IEUYnLoAJ8Y1KLTgLLtwjJlnU2yqXtY."
+  ssh:
+    install-server: true
+    allow-pw: false
+    authorized-keys:
+      - "{{ .SSHPublicKey }}"
+  storage:
+    # Spelled out: `layout: direct` under BIOS firmware creates no ESP, and the image then drops an
+    # EFI machine into the UEFI shell. Both boot partitions here, so one image serves either
+    # firmware. No LVM (growpart cannot extend a logical volume), no swap (kubelet refuses it).
+    config:
+      # grub_device on the disk: curtin puts the BIOS loader into its biosboot partition.
+      - {type: disk, id: disk0, match: {size: largest}, ptable: gpt, wipe: superblock-recursive, preserve: false, grub_device: true}
+      - {type: partition, id: p-bios, device: disk0, size: 1M, flag: bios_grub, preserve: false}
+      # The ESP must not be marked grub_device: under BIOS curtin would run a legacy grub-install
+      # onto it and fail on fat. The EFI loader is installed in late-commands instead.
+      - {type: partition, id: p-esp, device: disk0, size: 64M, flag: boot, preserve: false}
+      - {type: format, id: f-esp, volume: p-esp, fstype: fat32, preserve: false}
+      - {type: partition, id: p-root, device: disk0, size: -1, preserve: false}
+      - {type: format, id: f-root, volume: p-root, fstype: ext4, preserve: false}
+      - {type: mount, id: m-root, device: f-root, path: /}
+      - {type: mount, id: m-esp, device: f-esp, path: /boot/efi}
+  late-commands:
+    - >-
+      sh -c '. /target/etc/os-release; printf "%s\n" "Types: deb" "URIs: http://mirror.yandex.ru/ubuntu"
+      "Suites: $VERSION_CODENAME $VERSION_CODENAME-updates $VERSION_CODENAME-backports $VERSION_CODENAME-security"
+      "Components: main restricted universe multiverse" "Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg"
+      > /target/etc/apt/sources.list.d/ubuntu.sources'
+    # The build runs under BIOS, so curtin leaves the ESP empty. `--removable` writes the fallback
+    # \EFI\BOOT\BOOTX64.EFI and touches no NVRAM, which does not survive here anyway.
+    - curtin in-target --target=/target -- apt-get update
+    - curtin in-target --target=/target -- apt-get install -y --no-install-recommends grub-efi-amd64-bin
+    - >-
+      curtin in-target --target=/target --
+      grub-install --target=x86_64-efi --efi-directory=/boot/efi --removable
+    # The source ships the generic kernel with its firmware (about 700 MB), headers and tools; a VM
+    # needs none of it. The zfs modules stay: linux-modules depends on them. `linux-image-virtual+`
+    # makes apt refuse a removal that would take the kernel along.
+    - >-
+      curtin in-target --target=/target -- sh -c '
+      pkgs=$(dpkg-query -W -f="\${db:Status-Status} \${Package}\n" "linux-firmware*" firmware-sof-signed
+      intel-microcode amd64-microcode linux-generic linux-image-generic "linux-headers-*" "linux-tools-*"
+      linux-perf linux-libc-dev 2>/dev/null | sed -n "s/^installed //p");
+      DEBIAN_FRONTEND=noninteractive apt-get purge -y $pkgs linux-image-virtual+ &&
+      apt-get autoremove -y --purge && apt-get clean && ls /boot/vmlinuz-*'
+    - curtin in-target --target=/target -- cloud-init clean --logs --seed
+    - >-
+      curtin in-target --target=/target --
+      sh -c 'echo "{{ .SSHUsername }} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/{{ .SSHUsername }}'
+  shutdown: poweroff

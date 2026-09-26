@@ -1,0 +1,26 @@
+---
+# The webinar run: stamp.yml instead of update.yml, the same targets and access as demo-pool-site.
+apiVersion: ansible.deckhouse.io/v1alpha1
+kind: AnsibleRun
+metadata:
+  name: demo-stamp
+  namespace: demo-webinar
+spec:
+  playbook:
+    type: Git
+    git:
+      url: https://github.com/fl64/2026-webinar-dp-virtualization.git
+      revision: main
+      path: 03-lifecycle/playbooks/stamp.yml
+    vars:
+      - name: updated_by
+        value: AnsibleRun
+  target:
+    type: VirtualMachines
+    virtualMachines:
+      selector:
+        matchLabels:
+          role: demo
+  connection:
+    secretRef:
+      name: demo-pool
