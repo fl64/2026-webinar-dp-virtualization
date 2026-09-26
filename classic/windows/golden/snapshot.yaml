@@ -1,0 +1,11 @@
+---
+# The generalized disk as it was right after sysprep. The image is taken off this snapshot, not
+# off the disk: a disk attached to a VM, even a stopped one, cannot be captured, and the build VM
+# stays to show how the image was made.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualDiskSnapshot
+metadata:
+  name: demo-win-golden
+  namespace: demo-webinar
+spec:
+  virtualDiskName: demo-win-build-root

@@ -47,7 +47,7 @@ stringData:
       - systemctl enable --now nginx
     final_message: "🔥🔥🔥 The system is finally up, after $UPTIME seconds 🔥🔥🔥"
 ---
-# Root disk from the project image, project/vi.yaml.
+# Root disk from the project image, preflight/vi.yaml.
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualDisk
 metadata:

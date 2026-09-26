@@ -16,7 +16,7 @@ spec:
     path: gitops/argocd/vm
   destination:
     server: https://kubernetes.default.svc
-    namespace: demo-argocd
+    namespace: demo-webinar
   syncPolicy:
     automated:
       prune: true

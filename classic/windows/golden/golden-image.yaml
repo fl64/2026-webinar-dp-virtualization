@@ -1,5 +1,5 @@
 ---
-# Cluster-scoped; the source disk must be attached to no VM, even a stopped one holds it InUse.
+# Cluster-scoped, taken off the snapshot in snapshot.yaml.
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: ClusterVirtualImage
 metadata:
@@ -8,6 +8,6 @@ spec:
   dataSource:
     type: ObjectRef
     objectRef:
-      kind: VirtualDisk
-      name: demo-win-root
+      kind: VirtualDiskSnapshot
+      name: demo-win-golden
       namespace: demo-webinar

@@ -3,9 +3,16 @@ kind: Project
 metadata:
   name: demo-webinar
 spec:
-  description: Every part of the demo except Helm and Argo CD, which bring their own projects
+  description: Every part of the demo, from the ISO install to Argo CD
   projectTemplateName: default
   parameters:
     # Isolated, the template default, allows egress only inside the project: the image imports
     # over HTTP and the package installs from cloud-init would never reach the internet.
     networkPolicy: NotRestricted
+  # Peak of the demo plus 50%: every VM at once, the pool at its HPA maximum of 6, both Windows VMs.
+  # Shown on the project page in the console.
+  quota:
+    requests.cpu: "18"
+    requests.memory: 38Gi
+    limits.cpu: "32"
+    limits.memory: 40Gi

@@ -4,7 +4,7 @@ kind: HelmClusterAddon
 metadata:
   name: demo-helm
 spec:
-  namespace: demo-helm
+  namespace: demo-webinar
   chart:
     helmClusterAddonRepository: demo-helm
     helmClusterAddonChart: demo-helm # operator resolves it to <repository>-chart-<chart>

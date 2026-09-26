@@ -1,10 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: demo-argocd
+namespace: demo-webinar
 
 resources:
-  - project.yaml
   - vi.yaml
   - vd.yaml
   - vm.yaml

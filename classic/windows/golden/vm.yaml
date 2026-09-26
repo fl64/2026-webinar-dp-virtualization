@@ -2,7 +2,7 @@
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualDisk
 metadata:
-  name: demo-win-root
+  name: demo-win-build-root
 spec:
   persistentVolumeClaim:
     # DVCR keeps an image taken off a disk raw, so it weighs what the disk declares, not what
@@ -12,7 +12,7 @@ spec:
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualMachine
 metadata:
-  name: demo-win
+  name: demo-win-build
 spec:
   virtualMachineClassName: generic
   # The answer file ends with a shutdown that has to stick; AlwaysOn would boot back into OOBE.
@@ -32,7 +32,7 @@ spec:
     type: SysprepRef
     sysprepRef:
       kind: Secret
-      name: demo-win
+      name: demo-win-build
   # ISO first: with no bootloader on the disk OVMF drops into the UEFI shell instead of
   # falling through to the next entry.
   blockDeviceRefs:
@@ -40,7 +40,7 @@ spec:
       name: demo-win-iso
       bootOrder: 1
     - kind: VirtualDisk
-      name: demo-win-root
+      name: demo-win-build-root
       bootOrder: 2
     - kind: ClusterVirtualImage
       name: demo-win-virtio

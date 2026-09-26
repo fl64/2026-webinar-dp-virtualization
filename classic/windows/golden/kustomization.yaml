@@ -6,7 +6,7 @@ resources:
   - vm.yaml
 
 secretGenerator:
-  - name: demo-win
+  - name: demo-win-build
     type: provisioning.virtualization.deckhouse.io/sysprep
     files:
       - autounattend.xml
