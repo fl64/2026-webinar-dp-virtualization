@@ -1,0 +1,13 @@
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualDisk
+metadata:
+  name: {{ .Values.name }}-root
+spec:
+  persistentVolumeClaim:
+    size: {{ .Values.disk.size }}
+    storageClassName: {{ .Values.storageClass }}
+  dataSource:
+    type: ObjectRef
+    objectRef:
+      kind: VirtualImage
+      name: {{ .Values.name }}

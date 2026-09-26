@@ -1,0 +1,13 @@
+# terraform: локальный стейт и скачанные провайдеры — не в гит (.terraform.lock.hcl остаётся)
+**/.terraform/
+*.tfstate
+*.tfstate.*
+
+# SSH-пара демо генерируется на месте, см. шаг 0 в 00-prep.md
+keys/
+
+# copied from keys/demo_ed25519.pub in step 5 of 02-init.md
+classic/windows/clone/authorized_keys
+
+# документы публикуются позже отдельно
+*.md

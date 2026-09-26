@@ -1,0 +1,8 @@
+---
+# GitHub Pages of this repository: step 0 of 00-prep.md puts index.yaml and the chart into gh-pages.
+apiVersion: helm.deckhouse.io/v1alpha1
+kind: HelmClusterAddonRepository
+metadata:
+  name: demo-helm
+spec:
+  url: https://fl64.github.io/2026-webinar-dp-virtualization

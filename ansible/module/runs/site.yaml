@@ -1,0 +1,26 @@
+---
+# The playbook from ansible/playbooks in this repository; updated_by lands in /etc/motd of every VM.
+apiVersion: ansible.deckhouse.io/v1alpha1
+kind: AnsibleRun
+metadata:
+  name: demo-ansible-vmpool-site
+  namespace: demo-webinar
+spec:
+  playbook:
+    type: Git
+    git:
+      url: https://github.com/fl64/2026-webinar-dp-virtualization.git
+      revision: main
+      path: ansible/playbooks/site.yml
+    vars:
+      - name: updated_by
+        value: AnsibleRun
+  target:
+    type: VirtualMachines
+    virtualMachines:
+      selector:
+        matchLabels:
+          vmpool.virtualization.deckhouse.io/pool: demo-ansible-vmpool
+  connection:
+    secretRef:
+      name: demo-ansible-vmpool

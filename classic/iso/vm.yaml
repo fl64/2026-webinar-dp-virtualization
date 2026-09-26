@@ -1,0 +1,22 @@
+# Order of blockDeviceRefs is the boot order: CD first, then the blank disk.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachine
+metadata:
+  name: demo-iso
+  labels:
+    vm: demo-iso
+spec:
+  virtualMachineClassName: generic
+  runPolicy: Manual
+  bootloader: EFI
+  cpu:
+    cores: 2
+    coreFraction: 10%
+  # 2Gi is what the live-server installer asks for; less and it drops to the recovery shell.
+  memory:
+    size: 2Gi
+  blockDeviceRefs:
+    - kind: VirtualImage
+      name: demo-iso
+    - kind: VirtualDisk
+      name: demo-iso-root

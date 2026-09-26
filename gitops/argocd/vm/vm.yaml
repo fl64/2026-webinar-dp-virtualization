@@ -1,0 +1,68 @@
+---
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachine
+metadata:
+  name: demo-argocd
+  labels:
+    vm: demo-argocd
+spec:
+  virtualMachineClassName: generic
+  runPolicy: AlwaysOnUnlessStoppedManually
+  # The demo moves the VM by changing this name in git; use node names from your cluster.
+  nodeSelector:
+    kubernetes.io/hostname: virtlab-pt-1
+  cpu:
+    cores: 1
+    coreFraction: 10%
+  memory:
+    size: 1Gi
+  disruptions:
+    restartApprovalMode: Automatic
+  provisioning:
+    type: UserData
+    # Same cloud-init for every preview; the ApplicationSet patches only the fields that differ.
+    userData: |
+      #cloud-config
+      apt:
+        primary:
+          - arches: [default]
+            uri: http://mirror.yandex.ru/ubuntu
+      package_update: true
+      packages:
+        - openssh-server
+        - qemu-guest-agent
+        - nginx
+      users:
+        - name: cloud
+          passwd: $6$democlassic$cCgnx/0VM48BpLaMDyWq/Rktdd5PkM4weRgnH1nQ3yas6Ja2zlMgpQzmavAUiDTg5rPm49p0Wgpt9QxUFN87n. # cloud
+          shell: /bin/bash
+          sudo: ALL=(ALL) NOPASSWD:ALL
+          chpasswd: { expire: False }
+          lock_passwd: false
+          ssh_authorized_keys:
+            - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFVsaFrxjnt0m2m9HAP7Z/jhvEg61K/rJj+TDV0eTHcx demo@webinar2026
+      ssh_pwauth: true
+      # bootcmd, not write_files: write_files runs once per instance and would skip a running VM.
+      bootcmd:
+        - mkdir -p /var/www/html
+        - |
+          cat > /var/www/html/index.html <<'HTML'
+          <!doctype html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <title>demo-argocd</title>
+            </head>
+            <body>
+              <h1>demo-argocd</h1>
+              <p>Deployed by Argo CD from git</p>
+            </body>
+          </html>
+          HTML
+      runcmd:
+        - systemctl enable --now ssh
+        - systemctl enable --now qemu-guest-agent
+        - systemctl enable --now nginx
+  blockDeviceRefs:
+    - kind: VirtualDisk
+      name: demo-argocd-root

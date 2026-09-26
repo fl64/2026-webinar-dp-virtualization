@@ -1,0 +1,25 @@
+---
+# The VM from the default branch: delete it and Argo recreates it, change the repository and the VM
+# follows. Changes arrive at once when git calls /api/webhook on push, otherwise within minutes.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-argocd
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: demo-argocd
+  source:
+    repoURL: https://github.com/fl64/2026-webinar-dp-virtualization.git
+    targetRevision: main
+    path: gitops/argocd/vm
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: demo-argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true

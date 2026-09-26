@@ -1,0 +1,192 @@
+---
+# cloud-init of the VM, referenced by provisioning.userDataRef below.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: demo-kubectl
+  namespace: demo-webinar
+type: provisioning.virtualization.deckhouse.io/cloud-init
+stringData:
+  userdata: |
+    #cloud-config
+    users:
+      - name: cloud
+        passwd: $6$democlassic$cCgnx/0VM48BpLaMDyWq/Rktdd5PkM4weRgnH1nQ3yas6Ja2zlMgpQzmavAUiDTg5rPm49p0Wgpt9QxUFN87n. # cloud
+        shell: /bin/bash
+        sudo: ALL=(ALL) NOPASSWD:ALL
+        chpasswd: { expire: False }
+        lock_passwd: false
+        ssh_authorized_keys:
+          - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFVsaFrxjnt0m2m9HAP7Z/jhvEg61K/rJj+TDV0eTHcx demo@webinar2026
+    ssh_pwauth: true          # password SSH, used by the maintenance runs
+    package_update: true
+    packages:
+      - openssh-server
+      - qemu-guest-agent
+      - nginx
+    # bootcmd, not write_files: write_files runs once per instance and would skip an existing VM.
+    bootcmd:
+      - mkdir -p /var/www/html
+      - |
+        cat > /var/www/html/index.html <<'HTML'
+        <!doctype html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>demo-kubectl</title>
+          </head>
+          <body>
+            <h1>demo-kubectl</h1>
+            <p>Hello, kubectl!</p>
+          </body>
+        </html>
+        HTML
+    runcmd:
+      - systemctl enable --now ssh
+      - systemctl enable --now qemu-guest-agent
+      - systemctl enable --now nginx
+    final_message: "🔥🔥🔥 The system is finally up, after $UPTIME seconds 🔥🔥🔥"
+---
+# Root disk from the project image, project/vi.yaml.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualDisk
+metadata:
+  name: demo-kubectl-root
+  namespace: demo-webinar
+spec:
+  persistentVolumeClaim:
+    size: 4G
+  dataSource:
+    type: ObjectRef
+    objectRef:
+      kind: VirtualImage
+      name: demo-ubuntu
+---
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachine
+metadata:
+  name: demo-kubectl
+  namespace: demo-webinar
+  labels:
+    vm: demo-kubectl
+    role: demo
+spec:
+  virtualMachineClassName: generic
+  runPolicy: AlwaysOnUnlessStoppedManually
+  cpu:
+    cores: 1
+    coreFraction: 10%
+  memory:
+    size: 1Gi
+  provisioning:
+    type: UserDataRef
+    userDataRef:
+      kind: Secret
+      name: demo-kubectl
+  blockDeviceRefs:
+    - kind: VirtualDisk
+      name: demo-kubectl-root
+---
+# VM labels are propagated to its pod, so an ordinary label selector matches the VM.
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-kubectl
+  namespace: demo-webinar
+spec:
+  selector:
+    vm: demo-kubectl
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: demo-kubectl
+  namespace: demo-webinar
+spec:
+  certificateOwnerRef: false
+  dnsNames:
+    - demo-kubectl.pt.dvp.flant.dev
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+  secretName: demo-kubectl-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-kubectl
+  namespace: demo-webinar
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: demo-kubectl.pt.dvp.flant.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: demo-kubectl
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - demo-kubectl.pt.dvp.flant.dev
+      secretName: demo-kubectl-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: demo-kubectl
+  namespace: demo-webinar
+spec:
+  podSelector:
+    matchLabels:
+      vm: demo-kubectl
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: d8-ingress-nginx
+          podSelector:
+            matchLabels:
+              app: controller
+      ports:
+        - protocol: TCP
+          port: 80
+    # SSH from the maintenance runner pods.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: d8-ansible
+      ports:
+        - protocol: TCP
+          port: 22
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # 80/443 for cloud-init package downloads, 123 for NTP.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+        - protocol: UDP
+          port: 123

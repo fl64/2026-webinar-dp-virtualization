@@ -1,0 +1,6 @@
+apiVersion: v2
+name: demo-helm
+description: Example VM for DVP, released by operator-helm
+type: application
+version: 0.6.0
+appVersion: "1.0"

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Second-stage answer file: applied to every clone of the generalized image.
+     Only specialize and oobeSystem run — the disk is partitioned, the edition is
+     chosen and the drivers are already inside the image.
+
+     The public key travels as a second file in the same Secret: keys of a
+     sysprep Secret become files on the provisioning CD, so authorized_keys is
+     simply copied off that CD below. No templating, no key inside this file. -->
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+
+  <settings pass="specialize">
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <!-- "*" makes Windows generate a random name. A pool of clones with one
+           hardcoded name would collide in DNS and in AD. Max 15 chars. -->
+      <ComputerName>*</ComputerName>
+      <TimeZone>Russian Standard Time</TimeZone>
+    </component>
+  </settings>
+
+  <settings pass="oobeSystem">
+
+    <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <InputLocale>0409:00000409;0419:00000419</InputLocale>
+      <SystemLocale>ru-RU</SystemLocale>
+      <UILanguage>ru-RU</UILanguage>
+      <UserLocale>ru-RU</UserLocale>
+    </component>
+
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <TimeZone>Russian Standard Time</TimeZone>
+
+      <!-- Kept minimal on purpose: one element unknown to this Windows build
+           aborts the entire oobeSystem pass. -->
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+      </OOBE>
+
+      <UserAccounts>
+        <AdministratorPassword>
+          <Value>Passw0rd!</Value>
+          <PlainText>true</PlainText>
+        </AdministratorPassword>
+        <!-- A latin-named administrator, because the built-in account is
+             localized: on a Russian build it is "Администратор", and
+             `ssh Administrator@host` fails with "Invalid user Administrator".
+             sshd honours administrators_authorized_keys for every member of the
+             Administrators group, so this account needs no key file of its own. -->
+        <LocalAccounts>
+          <LocalAccount wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+            <Name>cloud</Name>
+            <DisplayName>cloud</DisplayName>
+            <Group>Administrators</Group>
+            <Password>
+              <Value>Passw0rd!</Value>
+              <PlainText>true</PlainText>
+            </Password>
+          </LocalAccount>
+        </LocalAccounts>
+      </UserAccounts>
+
+      <!-- One autologon so FirstLogonCommands run unattended. Server Core shows
+           a cmd window instead of a desktop; the session is closed at the end. -->
+      <AutoLogon>
+        <Enabled>true</Enabled>
+        <LogonCount>1</LogonCount>
+        <Username>Administrator</Username>
+        <Password>
+          <Value>Passw0rd!</Value>
+          <PlainText>true</PlainText>
+        </Password>
+      </AutoLogon>
+
+      <FirstLogonCommands>
+        <!-- Public key for members of the Administrators group. sshd reads this
+             one file for every admin account, NOT ~/.ssh/authorized_keys.
+             The provisioning CD letter is not fixed, so the drives are probed. -->
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>1</Order>
+          <Description>Install the SSH public key from the provisioning CD</Description>
+          <CommandLine>cmd /c md C:\ProgramData\ssh 2&gt;nul &amp; for %i in (D E F G H) do if exist %i:\authorized_keys copy /y %i:\authorized_keys C:\ProgramData\ssh\administrators_authorized_keys</CommandLine>
+        </SynchronousCommand>
+        <!-- Without this ACL sshd silently ignores the file: it must be owned by
+             an admin and writable by nobody else. This is the single most common
+             reason key auth "just does not work" on Windows.
+             Groups are addressed by SID on purpose — on a localized Windows
+             "BUILTIN\Administrators" does not resolve (the group is called
+             "Администраторы" on a Russian build) and icacls quietly leaves the
+             inherited ACL in place. *S-1-5-18 = SYSTEM, *S-1-5-32-544 = the
+             local Administrators group. -->
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>2</Order>
+          <Description>Fix ACL on administrators_authorized_keys</Description>
+          <CommandLine>cmd /c icacls C:\ProgramData\ssh\administrators_authorized_keys /inheritance:r /grant "*S-1-5-18:F" /grant "*S-1-5-32-544:F"</CommandLine>
+        </SynchronousCommand>
+        <!-- Host keys were deleted from the golden image, so this start generates
+             a fresh set unique to this clone. -->
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>3</Order>
+          <Description>Start sshd</Description>
+          <CommandLine>powershell -NoProfile -Command "Start-Service sshd; Set-Service sshd -StartupType Automatic"</CommandLine>
+        </SynchronousCommand>
+        <!-- The clone disk may be declared larger than the image; Windows does
+             not grow the system volume on its own. -->
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>4</Order>
+          <Description>Extend the system volume to the whole disk</Description>
+          <CommandLine>powershell -NoProfile -Command "$max = (Get-PartitionSupportedSize -DriveLetter C).SizeMax; if ($max -gt (Get-Partition -DriveLetter C).Size) { Resize-Partition -DriveLetter C -Size $max }"</CommandLine>
+        </SynchronousCommand>
+      </FirstLogonCommands>
+
+    </component>
+  </settings>
+
+</unattend>

@@ -1,0 +1,100 @@
+---
+# VM labels are propagated to its pod, so an ordinary label selector matches the VM.
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-kustomize
+spec:
+  selector:
+    vm: demo-kustomize
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: demo-kustomize
+spec:
+  certificateOwnerRef: false
+  dnsNames:
+    - demo-kustomize.pt.dvp.flant.dev
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+  secretName: demo-kustomize-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-kustomize
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: demo-kustomize.pt.dvp.flant.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: demo-kustomize
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - demo-kustomize.pt.dvp.flant.dev
+      secretName: demo-kustomize-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: demo-kustomize
+spec:
+  podSelector:
+    matchLabels:
+      vm: demo-kustomize
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: d8-ingress-nginx
+          podSelector:
+            matchLabels:
+              app: controller
+      ports:
+        - protocol: TCP
+          port: 80
+    # SSH from the maintenance runner pods.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: d8-ansible
+      ports:
+        - protocol: TCP
+          port: 22
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # 80/443 for cloud-init package downloads, 123 for NTP.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+        - protocol: UDP
+          port: 123

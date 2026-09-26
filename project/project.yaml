@@ -1,0 +1,11 @@
+apiVersion: deckhouse.io/v1alpha3
+kind: Project
+metadata:
+  name: demo-webinar
+spec:
+  description: Every part of the demo except Helm and Argo CD, which bring their own projects
+  projectTemplateName: default
+  parameters:
+    # Isolated, the template default, allows egress only inside the project: the image imports
+    # over HTTP and the package installs from cloud-init would never reach the internet.
+    networkPolicy: NotRestricted

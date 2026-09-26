@@ -1,0 +1,21 @@
+---
+# Cluster-scoped, so they stay out of the kustomization: its namespace transformer would stamp one on.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: ClusterVirtualImage
+metadata:
+  name: demo-win-iso
+spec:
+  dataSource:
+    type: HTTP
+    http:
+      url: https://go.microsoft.com/fwlink/p/?LinkID=2195280
+---
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: ClusterVirtualImage
+metadata:
+  name: demo-win-virtio
+spec:
+  dataSource:
+    type: HTTP
+    http:
+      url: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.302-1/virtio-win-0.1.302.iso

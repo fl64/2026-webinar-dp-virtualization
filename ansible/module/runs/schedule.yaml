@@ -1,0 +1,31 @@
+---
+# Each cron tick creates an AnsibleRun named <schedule>-<unix-time>: the same playbook every night,
+# so a VM that joined the pool since the last run gets its updates too.
+apiVersion: ansible.deckhouse.io/v1alpha1
+kind: AnsibleRunSchedule
+metadata:
+  name: demo-ansible-vmpool-nightly
+  namespace: demo-webinar
+spec:
+  schedule: "0 4 * * *"
+  timeZone: "Europe/Moscow"
+  template:
+    spec:
+      playbook:
+        type: Git
+        git:
+          url: https://github.com/fl64/2026-webinar-dp-virtualization.git
+          revision: main
+          path: ansible/playbooks/site.yml
+        vars:
+          - name: updated_by
+            value: AnsibleRunSchedule
+      target:
+        type: VirtualMachines
+        virtualMachines:
+          selector:
+            matchLabels:
+              vmpool.virtualization.deckhouse.io/pool: demo-ansible-vmpool
+      connection:
+        secretRef:
+          name: demo-ansible-vmpool

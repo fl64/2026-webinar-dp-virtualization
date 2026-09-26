@@ -1,0 +1,23 @@
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachine
+metadata:
+  name: demo-kustomize
+  labels:
+    vm: demo-kustomize
+    role: demo
+spec:
+  virtualMachineClassName: generic
+  runPolicy: AlwaysOnUnlessStoppedManually
+  cpu:
+    cores: 1
+    coreFraction: 10%
+  memory:
+    size: 1Gi
+  provisioning:
+    type: UserDataRef
+    userDataRef:
+      kind: Secret
+      name: demo-kustomize
+  blockDeviceRefs:
+    - kind: VirtualDisk
+      name: demo-kustomize-root

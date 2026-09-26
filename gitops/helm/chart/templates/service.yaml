@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.name }}
+spec:
+  # VM labels are propagated to its pod, so an ordinary selector matches the VM.
+  selector:
+    app: {{ .Values.name }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

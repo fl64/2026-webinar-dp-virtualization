@@ -1,0 +1,100 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-argocd
+spec:
+  selector:
+    vm: demo-argocd
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: demo-argocd
+spec:
+  certificateOwnerRef: false
+  dnsNames:
+    - demo-argocd.pt.dvp.flant.dev
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+  secretName: demo-argocd-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-argocd
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: demo-argocd.pt.dvp.flant.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: demo-argocd
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - demo-argocd.pt.dvp.flant.dev
+      secretName: demo-argocd-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: demo-argocd
+spec:
+  podSelector:
+    matchLabels:
+      vm: demo-argocd
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: d8-ingress-nginx
+          podSelector:
+            matchLabels:
+              app: controller
+      ports:
+        - protocol: TCP
+          port: 80
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: d8-service-with-healthchecks
+          podSelector:
+            matchLabels:
+              app: agent
+      ports:
+        - protocol: TCP
+          port: 80
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+        - protocol: UDP
+          port: 123

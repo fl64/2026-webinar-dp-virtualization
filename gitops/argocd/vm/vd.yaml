@@ -1,0 +1,13 @@
+---
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualDisk
+metadata:
+  name: demo-argocd-root
+spec:
+  persistentVolumeClaim:
+    size: 8Gi
+  dataSource:
+    type: ObjectRef
+    objectRef:
+      kind: VirtualImage
+      name: demo-argocd

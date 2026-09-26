@@ -1,0 +1,30 @@
+name: demo-helm
+
+# The chart creates its own VirtualImage from this URL.
+imageUrl: https://mirror.yandex.ru/ubuntu-cloud-images/minimal/releases/resolute/release-20260723/ubuntu-26.04-minimal-cloudimg-amd64.img
+vmClass: generic
+storageClass: rv-thin-r1
+
+cpu:
+  cores: 1
+  coreFraction: "10%"
+memory: 1Gi
+
+disk:
+  size: 15Gi
+
+# Console and SSH login.
+user: cloud
+password: cloud
+
+# Public half of keys/demo_ed25519, put here by step 0 of 00-prep.md.
+sshPublicKey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFVsaFrxjnt0m2m9HAP7Z/jhvEg61K/rJj+TDV0eTHcx demo@webinar2026
+
+# Automatic: the VM applies restart-needing changes itself instead of waiting in
+# AwaitingRestartToApplyConfiguration.
+restartApprovalMode: Automatic
+
+ingress:
+  host: demo-helm.pt.dvp.flant.dev
+  className: nginx
+  issuer: letsencrypt        # ClusterIssuer name

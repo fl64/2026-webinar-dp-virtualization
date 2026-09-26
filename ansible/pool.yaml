@@ -1,0 +1,115 @@
+---
+# AnsibleRun selects on the pool label, and plain ansible runs with --limit pool: the namespace
+# holds the other VMs of the demo too. The disks come from the project image, project/vi.yaml.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachinePool
+metadata:
+  name: demo-ansible-vmpool          # replicas are named <pool>-<suffix>
+  namespace: demo-webinar
+spec:
+  replicas: 3
+  scaleDownPolicy: NewestFirst
+  virtualMachineTemplate:
+    metadata:
+      labels:
+        role: demo
+      annotations:
+        # the ansible group of every replica in `d8 v ansible-inventory`
+        provisioning.virtualization.deckhouse.io/groups: pool
+    spec:
+      runPolicy: AlwaysOnUnlessStoppedManually
+      virtualMachineClassName: generic
+      liveMigrationPolicy: PreferSafe
+      cpu:
+        cores: 1
+        # 100% for sane HPA math: requests = cores * coreFraction, so at 20% one busy core
+        # reads as 500% utilization and the HPA jumps straight to maxReplicas.
+        coreFraction: 100%
+      memory:
+        size: 1Gi
+      disruptions:
+        restartApprovalMode: Automatic
+      provisioning:
+        type: UserData
+        # Password SSH plus passwordless sudo: that is how the runner connects (see module/secret.yaml).
+        userData: |
+          #cloud-config
+          users:
+            - name: cloud
+              passwd: $6$democlassic$cCgnx/0VM48BpLaMDyWq/Rktdd5PkM4weRgnH1nQ3yas6Ja2zlMgpQzmavAUiDTg5rPm49p0Wgpt9QxUFN87n. # cloud
+              shell: /bin/bash
+              sudo: ALL=(ALL) NOPASSWD:ALL
+              chpasswd: { expire: False }
+              lock_passwd: false
+              # For local ansible runs; the in-cluster runner uses the password instead.
+              ssh_authorized_keys:
+                - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFVsaFrxjnt0m2m9HAP7Z/jhvEg61K/rJj+TDV0eTHcx demo@webinar2026
+          ssh_pwauth: true
+          package_update: true
+          packages:
+            - openssh-server
+            - qemu-guest-agent
+            - stress-ng
+          write_files:
+            # Not enabled on purpose: a playbook starts it, otherwise every new replica would
+            # load itself and the pool would never scale back down. -t 5m stops the load itself.
+            - path: /etc/systemd/system/stress-ng.service
+              content: |
+                [Unit]
+                Description=CPU load for HPA demo
+                After=multi-user.target
+
+                [Service]
+                ExecStart=/usr/bin/stress-ng --cpu 0 --cpu-load 90 -t 5m
+                Restart=no
+
+                [Install]
+                WantedBy=multi-user.target
+          runcmd:
+            - systemctl enable --now ssh
+            - systemctl enable --now qemu-guest-agent
+            - systemctl daemon-reload
+      blockDeviceRefs:
+        - kind: VirtualDisk
+          name: root
+  virtualDiskTemplates:
+    - name: root
+      reclaim:
+        onScaleDown: Delete
+      spec:
+        persistentVolumeClaim:
+          size: 4G
+        dataSource:
+          type: ObjectRef
+          objectRef:
+            kind: VirtualImage
+            name: demo-ubuntu
+---
+# An ordinary HPA drives the pool: VirtualMachinePool exposes the scale subresource.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: demo-ansible-vmpool
+  namespace: demo-webinar
+spec:
+  scaleTargetRef:
+    apiVersion: virtualization.deckhouse.io/v1alpha2
+    kind: VirtualMachinePool
+    name: demo-ansible-vmpool
+  minReplicas: 3
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          # 80 rather than 50: a plain apt run already pushes CPU to about 50%.
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      # absorb short spikes from package installs
+      stabilizationWindowSeconds: 60
+    scaleDown:
+      # the default 300s is too slow to watch
+      stabilizationWindowSeconds: 60

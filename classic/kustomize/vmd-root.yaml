@@ -1,0 +1,12 @@
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualDisk
+metadata:
+  name: demo-kustomize-root
+spec:
+  persistentVolumeClaim:
+    size: 4G
+  dataSource:
+    type: ObjectRef
+    objectRef:
+      kind: VirtualImage
+      name: demo-ubuntu

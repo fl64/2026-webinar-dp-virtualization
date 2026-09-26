@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Windows Server 2022 Server Core: unattended install -> golden image.
+     Differences from the Windows 11 recipe (windows-sysprep/win11):
+       * no LabConfig\Bypass* block  - Server checks neither TPM, SecureBoot, RAM nor disk size
+       * /IMAGE/INDEX is mandatory   - a product key selects Standard vs Datacenter,
+                                       never Core vs Desktop Experience
+       * no ProductKey at all        - the evaluation ISO carries Evaluation editions
+                                       and asks for no key
+       * OpenSSH instead of RDP, and the image is squeezed as hard as it goes -->
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+
+  <settings pass="windowsPE">
+
+    <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <SetupUILanguage>
+        <UILanguage>ru-RU</UILanguage>
+      </SetupUILanguage>
+      <InputLocale>0409:00000409;0419:00000419</InputLocale>
+      <SystemLocale>ru-RU</SystemLocale>
+      <UILanguage>ru-RU</UILanguage>
+      <UserLocale>ru-RU</UserLocale>
+    </component>
+
+    <!-- virtio drivers straight off the virtio-win CD. Server 2022 uses the 2k22
+         subdirectory, not w11. The drive letter of the second CD is not fixed, so
+         every plausible one is listed; missing paths are logged and skipped. -->
+    <component name="Microsoft-Windows-PnpCustomizationsWinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <DriverPaths>
+        <PathAndCredentials wcm:action="add" wcm:keyValue="1" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Path>D:\amd64\2k22</Path>
+        </PathAndCredentials>
+        <PathAndCredentials wcm:action="add" wcm:keyValue="2" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Path>E:\amd64\2k22</Path>
+        </PathAndCredentials>
+        <PathAndCredentials wcm:action="add" wcm:keyValue="3" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Path>F:\amd64\2k22</Path>
+        </PathAndCredentials>
+        <PathAndCredentials wcm:action="add" wcm:keyValue="4" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Path>G:\amd64\2k22</Path>
+        </PathAndCredentials>
+      </DriverPaths>
+    </component>
+
+    <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+
+      <DiskConfiguration>
+        <WillShowUI>OnError</WillShowUI>
+        <Disk wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <DiskID>0</DiskID>
+          <WillWipeDisk>true</WillWipeDisk>
+          <CreatePartitions>
+            <CreatePartition wcm:action="add">
+              <Order>1</Order>
+              <Type>EFI</Type>
+              <Size>300</Size>
+            </CreatePartition>
+            <CreatePartition wcm:action="add">
+              <Order>2</Order>
+              <Type>MSR</Type>
+              <Size>16</Size>
+            </CreatePartition>
+            <CreatePartition wcm:action="add">
+              <Order>3</Order>
+              <Type>Primary</Type>
+              <Extend>true</Extend>
+            </CreatePartition>
+          </CreatePartitions>
+          <ModifyPartitions>
+            <ModifyPartition wcm:action="add">
+              <Order>1</Order>
+              <PartitionID>1</PartitionID>
+              <Format>FAT32</Format>
+              <Label>System</Label>
+            </ModifyPartition>
+            <ModifyPartition wcm:action="add">
+              <Order>2</Order>
+              <PartitionID>2</PartitionID>
+            </ModifyPartition>
+            <ModifyPartition wcm:action="add">
+              <Order>3</Order>
+              <PartitionID>3</PartitionID>
+              <Format>NTFS</Format>
+              <Label>Windows</Label>
+              <Letter>C</Letter>
+            </ModifyPartition>
+          </ModifyPartitions>
+        </Disk>
+      </DiskConfiguration>
+
+      <ImageInstall>
+        <OSImage>
+          <!-- Index 1 = Standard Evaluation (Server Core) on the ru evaluation ISO.
+               Verified in WinPE: dism /Get-WimInfo /WimFile:D:\sources\install.wim -->
+          <InstallFrom>
+            <MetaData wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+              <Key>/IMAGE/INDEX</Key>
+              <Value>1</Value>
+            </MetaData>
+          </InstallFrom>
+          <InstallTo>
+            <DiskID>0</DiskID>
+            <PartitionID>3</PartitionID>
+          </InstallTo>
+          <InstallToAvailablePartition>false</InstallToAvailablePartition>
+          <!-- Compact OS: system files stay compressed on disk, ~2-3 GiB less. -->
+          <Compact>true</Compact>
+          <WillShowUI>Never</WillShowUI>
+        </OSImage>
+      </ImageInstall>
+
+      <UserData>
+        <AcceptEula>true</AcceptEula>
+        <FullName>DVP</FullName>
+        <Organization>DVP</Organization>
+        <!-- No ProductKey: the evaluation ISO holds Evaluation editions only and
+             prompts for nothing. For a retail/VL ISO put the GVLK here instead:
+             Server 2022 Standard VDYBN-27WPP-V4HQT-9VMD4-VMK7H,
+             Server 2022 Datacenter WX4NM-KYWYW-QJJR4-XV3QB-6VM33 -->
+      </UserData>
+
+    </component>
+  </settings>
+
+  <settings pass="specialize">
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <ComputerName>win2022core</ComputerName>
+    </component>
+  </settings>
+
+  <settings pass="oobeSystem">
+
+    <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <InputLocale>0409:00000409;0419:00000419</InputLocale>
+      <SystemLocale>ru-RU</SystemLocale>
+      <UILanguage>ru-RU</UILanguage>
+      <UserLocale>ru-RU</UserLocale>
+    </component>
+
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <TimeZone>Russian Standard Time</TimeZone>
+
+      <!-- Deliberately minimal: one unknown element aborts the whole oobeSystem
+           pass (Windows 11 recipe lost a run to OOBE/HideWirelessSetup, which no
+           longer exists). Server Core needs nothing beyond the EULA page. -->
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+      </OOBE>
+
+      <UserAccounts>
+        <AdministratorPassword>
+          <Value>Passw0rd!</Value>
+          <PlainText>true</PlainText>
+        </AdministratorPassword>
+      </UserAccounts>
+
+      <!-- One autologon so FirstLogonCommands run with nobody at the console. -->
+      <AutoLogon>
+        <Enabled>true</Enabled>
+        <LogonCount>1</LogonCount>
+        <Username>Administrator</Username>
+        <Password>
+          <Value>Passw0rd!</Value>
+          <PlainText>true</PlainText>
+        </Password>
+      </AutoLogon>
+
+      <FirstLogonCommands>
+        <!-- All virtio drivers in one shot. Do NOT point pnputil at \amd64\2k22
+             on the virtio-win CD: that directory holds storage drivers only
+             (vioscsi, viostor) for Windows Setup. netkvm lives in
+             \NetKVM\2k22\amd64, vioser in \vioserial\2k22\amd64, and so on —
+             installing just \amd64\2k22 leaves the clone with no network
+             adapter and no guest-agent channel. The MSI carries every inf and
+             works fine on Core (it is not the GUI virtio-win-guest-tools.exe). -->
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>1</Order>
+          <Description>Install all virtio drivers</Description>
+          <CommandLine>cmd /c for %i in (D E F G H) do if exist %i:\virtio-win-gt-x64.msi msiexec /i %i:\virtio-win-gt-x64.msi /qn /norestart</CommandLine>
+        </SynchronousCommand>
+        <!-- qemu-guest-agent is what makes DVP report guestOSInfo, IP and AgentReady. -->
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>2</Order>
+          <Description>Install qemu-guest-agent</Description>
+          <CommandLine>cmd /c for %i in (D E F G H) do if exist %i:\guest-agent\qemu-ga-x86_64.msi msiexec /i %i:\guest-agent\qemu-ga-x86_64.msi /qn /norestart</CommandLine>
+        </SynchronousCommand>
+        <!-- OpenSSH server: Feature on Demand, pulled from Windows Update.
+             Needs egress; with none, add a FoD ISO and use -Source. -->
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>3</Order>
+          <Description>Install OpenSSH server</Description>
+          <CommandLine>powershell -NoProfile -Command "Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 | Out-File C:\Windows\Temp\openssh-install.log -Encoding utf8"</CommandLine>
+        </SynchronousCommand>
+        <!-- Automatic, but not started: a running sshd would generate host keys
+             that every clone would then share. -->
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>4</Order>
+          <Description>Enable sshd at boot, PowerShell as default shell</Description>
+          <CommandLine>powershell -NoProfile -Command "Set-Service sshd -StartupType Automatic; Set-Service ssh-agent -StartupType Automatic; New-ItemProperty -Path HKLM:\SOFTWARE\OpenSSH -Name DefaultShell -Value C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -PropertyType String -Force"</CommandLine>
+        </SynchronousCommand>
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>5</Order>
+          <Description>Drop any host keys generated in the golden image</Description>
+          <CommandLine>cmd /c del /q /f C:\ProgramData\ssh\ssh_host_*</CommandLine>
+        </SynchronousCommand>
+        <!-- hiberfil.sys is ~40% of RAM and buys nothing in a VM. -->
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>6</Order>
+          <Description>Disable hibernation</Description>
+          <CommandLine>cmd /c powercfg -h off</CommandLine>
+        </SynchronousCommand>
+        <!-- pagefile.sys equals RAM and lands in the image for nothing; clones
+             recreate their own on first boot. -->
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>7</Order>
+          <Description>Drop the pagefile</Description>
+          <CommandLine>powershell -NoProfile -Command "$cs = Get-WmiObject Win32_ComputerSystem -EnableAllPrivileges; $cs.AutomaticManagedPagefile = $false; $cs.Put() | Out-Null; Get-WmiObject Win32_PageFileSetting | Remove-WmiObject"</CommandLine>
+        </SynchronousCommand>
+        <!-- ResetBase drops superseded component versions: 1-2 GiB, at the price
+             of no longer being able to uninstall updates. -->
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>8</Order>
+          <Description>Clean up the component store</Description>
+          <CommandLine>cmd /c dism /Online /Cleanup-Image /StartComponentCleanup /ResetBase</CommandLine>
+        </SynchronousCommand>
+        <!-- Generalize and power off: this is what turns the VM into a golden
+             image. runPolicy must be AlwaysOnUnlessStoppedManually. -->
+        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <Order>9</Order>
+          <Description>Sysprep generalize and shutdown</Description>
+          <CommandLine>cmd /c %WINDIR%\System32\Sysprep\sysprep.exe /generalize /oobe /shutdown</CommandLine>
+        </SynchronousCommand>
+      </FirstLogonCommands>
+
+    </component>
+  </settings>
+
+</unattend>

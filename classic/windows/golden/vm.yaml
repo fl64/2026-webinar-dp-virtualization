@@ -1,0 +1,47 @@
+---
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualDisk
+metadata:
+  name: demo-win-root
+spec:
+  persistentVolumeClaim:
+    # DVCR keeps an image taken off a disk raw, so it weighs what the disk declares, not what
+    # the guest occupies: 12Gi covers Core with Compact OS plus one cumulative update.
+    size: 12Gi
+---
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachine
+metadata:
+  name: demo-win
+spec:
+  virtualMachineClassName: generic
+  # The answer file ends with a shutdown that has to stick; AlwaysOn would boot back into OOBE.
+  runPolicy: AlwaysOnUnlessStoppedManually
+  osType: Windows
+  # Not EFIWithSecureBoot: that needs vmStateStorageClass, unset here, and Server 2022 checks
+  # neither SecureBoot nor TPM.
+  bootloader: EFI
+  # SATA + e1000: boot.wim carries no virtio-scsi driver, with virtio Setup sees no disk at all.
+  enableParavirtualization: false
+  cpu:
+    cores: 2
+  # 2Gi rather than 4: the pagefile is sized after RAM and its leftovers ride into the image.
+  memory:
+    size: 2Gi
+  provisioning:
+    type: SysprepRef
+    sysprepRef:
+      kind: Secret
+      name: demo-win
+  # ISO first: with no bootloader on the disk OVMF drops into the UEFI shell instead of
+  # falling through to the next entry.
+  blockDeviceRefs:
+    - kind: ClusterVirtualImage
+      name: demo-win-iso
+      bootOrder: 1
+    - kind: VirtualDisk
+      name: demo-win-root
+      bootOrder: 2
+    - kind: ClusterVirtualImage
+      name: demo-win-virtio
+      bootOrder: 3

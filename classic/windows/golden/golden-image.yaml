@@ -1,0 +1,13 @@
+---
+# Cluster-scoped; the source disk must be attached to no VM, even a stopped one holds it InUse.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: ClusterVirtualImage
+metadata:
+  name: demo-win-golden
+spec:
+  dataSource:
+    type: ObjectRef
+    objectRef:
+      kind: VirtualDisk
+      name: demo-win-root
+      namespace: demo-webinar

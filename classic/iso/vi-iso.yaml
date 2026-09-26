@@ -1,0 +1,11 @@
+# The .iso extension is what makes the image attach as a CD-ROM.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualImage
+metadata:
+  name: demo-iso
+spec:
+  storage: ContainerRegistry
+  dataSource:
+    type: HTTP
+    http:
+      url: https://mirror.yandex.ru/ubuntu-releases/26.04/ubuntu-26.04-live-server-amd64.iso

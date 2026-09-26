@@ -1,0 +1,11 @@
+apiVersion: deckhouse.io/v1alpha3
+kind: Project
+metadata:
+  name: demo-helm
+spec:
+  description: VM released by operator-helm from an external chart
+  projectTemplateName: default
+  parameters:
+    # Isolated, the template default, allows egress only inside the project: the image import
+    # over HTTP and the package installs from cloud-init would never reach the internet.
+    networkPolicy: NotRestricted

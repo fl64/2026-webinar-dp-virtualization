@@ -1,0 +1,69 @@
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachine
+metadata:
+  name: {{ .Values.name }}
+  labels:
+    app: {{ .Values.name }}
+spec:
+  virtualMachineClassName: {{ .Values.vmClass }}
+  runPolicy: AlwaysOnUnlessStoppedManually
+  osType: Generic
+  enableParavirtualization: true
+  cpu:
+    cores: {{ .Values.cpu.cores }}
+    coreFraction: {{ .Values.cpu.coreFraction | quote }}
+  memory:
+    size: {{ .Values.memory }}
+  disruptions:
+    restartApprovalMode: {{ .Values.restartApprovalMode }}
+  blockDeviceRefs:
+    - kind: VirtualDisk
+      name: {{ .Values.name }}-root
+  provisioning:
+    type: UserData
+    userData: |
+      #cloud-config
+      users:
+        - name: {{ .Values.user }}
+          shell: /bin/bash
+          sudo: ALL=(ALL) NOPASSWD:ALL
+          lock_passwd: false
+          ssh_authorized_keys:
+            - {{ .Values.sshPublicKey }}
+      chpasswd:
+        list: |
+          {{ .Values.user }}:{{ .Values.password }}
+        expire: false
+      ssh_pwauth: true
+      apt:
+        primary:
+          - arches: [default]
+            uri: https://mirror.yandex.ru/ubuntu/
+      package_update: true
+      packages:
+        # The minimal cloud image carries no guest agent, and without it the VM never reaches
+        # AgentReady: no guest OS info, no graceful shutdown from the platform.
+        - qemu-guest-agent
+        - nginx
+      # bootcmd, not write_files: write_files runs once per instance and would skip a running VM.
+      # Never template cpu/memory in here: that is VM spec, and a change would turn a hot-plug
+      # into a restart.
+      bootcmd:
+        - mkdir -p /var/www/html
+        - |
+          cat > /var/www/html/index.html <<'HTML'
+          <!doctype html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <title>{{ .Values.name }}</title>
+            </head>
+            <body>
+              <h1>{{ .Values.name }}</h1>
+              <p>Hello, helm!</p>
+            </body>
+          </html>
+          HTML
+      runcmd:
+        - systemctl enable --now qemu-guest-agent
+        - systemctl enable --now nginx

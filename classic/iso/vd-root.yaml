@@ -1,0 +1,8 @@
+# Blank disk: no dataSource, the installer partitions it.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualDisk
+metadata:
+  name: demo-iso-root
+spec:
+  persistentVolumeClaim:
+    size: 1Gi

@@ -1,0 +1,18 @@
+---
+apiVersion: helm.deckhouse.io/v1alpha1
+kind: HelmClusterAddon
+metadata:
+  name: demo-helm
+spec:
+  namespace: demo-helm
+  chart:
+    helmClusterAddonRepository: demo-helm
+    helmClusterAddonChart: demo-helm # operator resolves it to <repository>-chart-<chart>
+    # Pinned: a chart change needs a version bump, a re-publish and a resync; values apply at once.
+    version: 0.6.0
+  values:
+    name: demo-helm
+    cpu:
+      cores: 2
+      coreFraction: "10%"
+    memory: 1Gi

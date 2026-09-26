@@ -1,0 +1,24 @@
+---
+# Own AppProject, not the shared `default`: argocd-server rewrites that one on module upgrades.
+# A kind or namespace missing from the lists below fails the sync with "not permitted in project demo".
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: demo-argocd
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-20"   # before any Application referencing it
+spec:
+  description: VM demo — one VM deployed from git
+
+  sourceRepos:
+    - https://github.com/fl64/2026-webinar-dp-virtualization.git   # only this repository, not the whole git
+
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: demo-argocd
+
+  # Namespace is absent on purpose: it comes with the Deckhouse Project below.
+  clusterResourceWhitelist:
+    - group: deckhouse.io
+      kind: Project

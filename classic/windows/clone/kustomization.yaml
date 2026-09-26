@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: demo-webinar
+
+resources:
+  - clone.yaml
+
+# Every key of a sysprep Secret becomes a file on the provisioning CD, so authorized_keys rides
+# along as a plain file; it is not in git, step 5 of 02-init.md copies the demo key here.
+secretGenerator:
+  - name: demo-win-clone
+    type: provisioning.virtualization.deckhouse.io/sysprep
+    files:
+      - unattend.xml
+      - authorized_keys
+
+generatorOptions:
+  disableNameSuffixHash: true

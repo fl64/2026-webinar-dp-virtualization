@@ -1,0 +1,42 @@
+#cloud-config
+# Guest agent is what reports AgentReady and the VM address.
+users:
+  - name: cloud
+    # openssl passwd -6 -salt democlassic cloud
+    passwd: $6$democlassic$cCgnx/0VM48BpLaMDyWq/Rktdd5PkM4weRgnH1nQ3yas6Ja2zlMgpQzmavAUiDTg5rPm49p0Wgpt9QxUFN87n.
+    lock_passwd: false
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    # Test key from keys/, the one every VM in this demo trusts.
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFVsaFrxjnt0m2m9HAP7Z/jhvEg61K/rJj+TDV0eTHcx demo@webinar2026
+chpasswd:
+  expire: false
+ssh_pwauth: true          # password SSH, used by the maintenance runs
+package_update: true
+packages:
+  - qemu-guest-agent
+  - openssh-server
+  - nginx
+# bootcmd, not write_files: write_files runs once per instance and would skip an existing VM.
+bootcmd:
+  - mkdir -p /var/www/html
+  - |
+    cat > /var/www/html/index.html <<'HTML'
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>demo-tf</title>
+      </head>
+      <body>
+        <h1>demo-tf</h1>
+        <p>Hello, terraform!</p>
+      </body>
+    </html>
+    HTML
+runcmd:
+  - systemctl enable --now qemu-guest-agent
+  - systemctl enable --now ssh
+  - systemctl enable --now nginx
+final_message: "🔥 cloud-init done after $UPTIME s"

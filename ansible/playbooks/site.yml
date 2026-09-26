@@ -1,0 +1,40 @@
+---
+# Install updates and leave a note in /etc/motd, seen on every login. Every way of running this
+# playbook passes updated_by, so the note on a VM tells which one touched it last.
+- name: Updates and motd
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    updated_by: ansible
+
+  tasks:
+    - name: Refresh the package cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    # Counted before the upgrade: the apt module does not report how many packages it changed.
+    - name: Count pending updates
+      ansible.builtin.command: apt-get -s dist-upgrade
+      register: pending
+      changed_when: false
+
+    - name: Install updates
+      ansible.builtin.apt:
+        upgrade: dist
+
+    # No reboot here: a restart in the middle of a run is a decision for the admin, not the playbook.
+    - name: Check whether a reboot is needed
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot
+
+    - name: Write /etc/motd
+      ansible.builtin.copy:
+        dest: /etc/motd
+        mode: '0644'
+        content: |
+          {{ inventory_hostname_short }} · {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}
+          Updated: {{ ansible_facts['date_time']['date'] }} {{ ansible_facts['date_time']['hour'] }}:{{ ansible_facts['date_time']['minute'] }} {{ ansible_facts['date_time']['tz'] }}, packages upgraded: {{ pending.stdout_lines | select('match', '^Inst ') | list | length }}
+          Reboot needed: {{ 'yes' if reboot.stat.exists else 'no' }}
+          Updated by: {{ updated_by }}

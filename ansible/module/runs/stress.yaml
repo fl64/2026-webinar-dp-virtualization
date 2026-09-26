@@ -1,0 +1,33 @@
+---
+# Starts the stress-ng unit shipped by the pool cloud-init; it stops itself after 5 minutes,
+# so the pool scales up and back down without a second run.
+apiVersion: ansible.deckhouse.io/v1alpha1
+kind: AnsibleRun
+metadata:
+  name: demo-ansible-vmpool-stress
+  namespace: demo-webinar
+spec:
+  playbook:
+    type: Inline
+    inline: |
+      ---
+      - name: CPU load for HPA
+        hosts: all
+        become: true
+        tasks:
+          # restarted, not started: started is a no-op on a running unit, so the run would
+          # not be repeatable.
+          - name: start stress-ng (90% CPU, 5m)
+            ansible.builtin.systemd:
+              name: stress-ng
+              state: restarted
+              daemon_reload: true
+  target:
+    type: VirtualMachines
+    virtualMachines:
+      selector:
+        matchLabels:
+          vmpool.virtualization.deckhouse.io/pool: demo-ansible-vmpool
+  connection:
+    secretRef:
+      name: demo-ansible-vmpool
