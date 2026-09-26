@@ -5,4 +5,4 @@ metadata:
   name: demo-iso-root
 spec:
   persistentVolumeClaim:
-    size: 1Gi
+    size: 4Gi

@@ -11,7 +11,7 @@ cpu:
 memory: 1Gi
 
 disk:
-  size: 15Gi
+  size: 4Gi
 
 # Console and SSH login.
 user: cloud

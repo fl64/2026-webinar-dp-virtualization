@@ -78,7 +78,7 @@ spec:
         onScaleDown: Delete
       spec:
         persistentVolumeClaim:
-          size: 4G
+          size: 4Gi
         dataSource:
           type: ObjectRef
           objectRef:

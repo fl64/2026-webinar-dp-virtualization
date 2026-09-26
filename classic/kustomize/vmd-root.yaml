@@ -4,7 +4,7 @@ metadata:
   name: demo-kustomize-root
 spec:
   persistentVolumeClaim:
-    size: 4G
+    size: 4Gi
   dataSource:
     type: ObjectRef
     objectRef:

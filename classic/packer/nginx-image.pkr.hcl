@@ -53,7 +53,7 @@ source "deckhouse-virtualization" "ubuntu" {
   namespace = var.namespace
 
   disk {
-    size = "6Gi"
+    size = "4Gi"
 
     data_source {
       http {

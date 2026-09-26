@@ -9,7 +9,7 @@ vm_cpu_core_fraction = "10%"
 vm_ram_size          = "1Gi"
 
 root_disk_name = "demo-tf-root"
-root_disk_size = "10Gi"
+root_disk_size = "4Gi"
 # root_disk_storage_class left unset: the cluster default StorageClass is used
 
 # The project-wide image from project/vi.yaml, the one the kubectl, kustomize and pool disks use too.
