@@ -1,7 +1,7 @@
 ---
-# The generalized disk as it was right after sysprep. The image is taken off this snapshot, not
-# off the disk: a disk attached to a VM, even a stopped one, cannot be captured, and the build VM
-# stays to show how the image was made.
+# The generalized disk as it was right after sysprep. A disk attached to a VM, even a stopped one,
+# cannot be captured, and the build VM stays to show how the image was made: so snapshot it, and
+# restore the snapshot into a disk no VM holds.
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualDiskSnapshot
 metadata:
@@ -9,3 +9,17 @@ metadata:
   namespace: demo-webinar
 spec:
   virtualDiskName: demo-win-build-root
+---
+# Not an image straight off the snapshot: this platform build refuses to import an image from a
+# snapshot taken by the unified snapshotter, a disk it restores fine.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualDisk
+metadata:
+  name: demo-win-golden
+  namespace: demo-webinar
+spec:
+  dataSource:
+    type: ObjectRef
+    objectRef:
+      kind: VirtualDiskSnapshot
+      name: demo-win-golden
