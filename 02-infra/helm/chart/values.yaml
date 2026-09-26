@@ -1,0 +1,30 @@
+name: demo-helm
+
+# Project image built by packer (01-image/packer); the chart only references it.
+image: demo-ubuntu-26-04-packer
+vmClass: generic
+storageClass: ""  # empty: the cluster default StorageClass
+
+cpu:
+  cores: 1
+  coreFraction: "10%"
+memory: 1Gi
+
+disk:
+  size: 4Gi
+
+# Console and SSH login.
+user: cloud
+password: cloud
+
+# Public half of keys/demo_ed25519, put here by step 0 of 00-prep.md.
+sshPublicKey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFVsaFrxjnt0m2m9HAP7Z/jhvEg61K/rJj+TDV0eTHcx demo@webinar2026
+
+# Automatic: the VM applies restart-needing changes itself instead of waiting in
+# AwaitingRestartToApplyConfiguration.
+restartApprovalMode: Automatic
+
+ingress:
+  host: demo-helm.d8-virtualization.ru
+  className: nginx
+  issuer: letsencrypt        # ClusterIssuer name

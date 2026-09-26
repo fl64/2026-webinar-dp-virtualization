@@ -1,0 +1,22 @@
+---
+# Installs nothing: reports pending updates. A VM that has some shows changed=1 in the run status,
+# so the hourly run tells which VMs the nightly one will touch.
+- name: Pending updates
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Refresh the package cache
+      ansible.builtin.apt:
+        update_cache: true
+      changed_when: false
+
+    - name: Count pending updates
+      ansible.builtin.shell: apt-get -s dist-upgrade | grep -c '^Inst ' || true
+      register: pending
+      changed_when: pending.stdout | int > 0
+
+    - name: Report
+      ansible.builtin.debug:
+        msg: "{{ pending.stdout }} packages to upgrade"

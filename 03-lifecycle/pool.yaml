@@ -1,0 +1,184 @@
+---
+# Replicas are web VMs like the others: AnsibleRun selects on role=demo, plain ansible on the demo
+# group. The disks come from the project image, 01-image/packer.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachinePool
+metadata:
+  name: demo-pool          # replicas are named <pool>-<suffix>
+  namespace: demo-webinar
+spec:
+  replicas: 3
+  scaleDownPolicy: NewestFirst
+  virtualMachineTemplate:
+    metadata:
+      labels:
+        role: demo
+      annotations:
+        # the ansible group of every replica in `d8 v ansible-inventory`
+        ansible.deckhouse.io/groups: pool,demo
+    spec:
+      runPolicy: AlwaysOnUnlessStoppedManually
+      virtualMachineClassName: generic
+      liveMigrationPolicy: PreferSafe
+      cpu:
+        cores: 1
+        # 100% for sane HPA math: requests = cores * coreFraction, so at 20% one busy core
+        # reads as 500% utilization and the HPA jumps straight to maxReplicas.
+        coreFraction: 100%
+      memory:
+        size: 1Gi
+      disruptions:
+        restartApprovalMode: Automatic
+      provisioning:
+        type: UserData
+        # Key SSH plus passwordless sudo: that is how the runner connects (keys/demo_ed25519).
+        userData: |
+          #cloud-config
+          users:
+            - name: cloud
+              passwd: $6$democlassic$cCgnx/0VM48BpLaMDyWq/Rktdd5PkM4weRgnH1nQ3yas6Ja2zlMgpQzmavAUiDTg5rPm49p0Wgpt9QxUFN87n. # cloud
+              shell: /bin/bash
+              sudo: ALL=(ALL) NOPASSWD:ALL
+              chpasswd: { expire: False }
+              lock_passwd: false
+              ssh_authorized_keys:
+                - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFVsaFrxjnt0m2m9HAP7Z/jhvEg61K/rJj+TDV0eTHcx demo@webinar2026
+          package_update: true
+          packages:
+            - openssh-server
+            - qemu-guest-agent
+            - stress-ng
+            - nginx
+          # The page names its replica, so curl through the Service shows which VM answered.
+          bootcmd:
+            - mkdir -p /var/www/html
+            - echo "<h1>$(hostname)</h1>" > /var/www/html/index.html
+          write_files:
+            # Not enabled on purpose: a playbook starts it, otherwise every new replica would
+            # load itself and the pool would never scale back down. -t 5m stops the load itself.
+            - path: /etc/systemd/system/stress-ng.service
+              content: |
+                [Unit]
+                Description=CPU load for HPA demo
+                After=multi-user.target
+
+                [Service]
+                ExecStart=/usr/bin/stress-ng --cpu 0 --cpu-load 90 -t 5m
+                Restart=no
+
+                [Install]
+                WantedBy=multi-user.target
+          runcmd:
+            - systemctl enable --now ssh
+            - systemctl enable --now qemu-guest-agent
+            - systemctl enable --now nginx
+            - systemctl daemon-reload
+      blockDeviceRefs:
+        - kind: VirtualDisk
+          name: root
+  virtualDiskTemplates:
+    - name: root
+      reclaim:
+        onScaleDown: Delete
+      spec:
+        persistentVolumeClaim:
+          size: 4Gi
+        dataSource:
+          type: ObjectRef
+          objectRef:
+            kind: VirtualImage
+            name: demo-ubuntu-26-04-packer
+---
+# Same rules as the other web VMs: page on 80 from the project (the rotation check curls the Service
+# from a pod), SSH from the maintenance runner pods and from the virtualization namespace,
+# which carries d8 v port-forward.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: demo-pool
+  namespace: demo-webinar
+spec:
+  podSelector:
+    matchLabels:
+      vmpool.virtualization.deckhouse.io/pool: demo-pool
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 80
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/managed-by: ansible-controller
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: d8-virtualization
+      ports:
+        - protocol: TCP
+          port: 22
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # 80/443 for cloud-init and apt, 123 for NTP.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+        - protocol: UDP
+          port: 123
+---
+# One Service over every replica: the pool label is set on each VM it creates.
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-pool
+  namespace: demo-webinar
+spec:
+  selector:
+    vmpool.virtualization.deckhouse.io/pool: demo-pool
+  ports:
+    - port: 80
+---
+# An ordinary HPA drives the pool: VirtualMachinePool exposes the scale subresource.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: demo-pool
+  namespace: demo-webinar
+spec:
+  scaleTargetRef:
+    apiVersion: virtualization.deckhouse.io/v1alpha2
+    kind: VirtualMachinePool
+    name: demo-pool
+  minReplicas: 3
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          # 80 rather than 50: a plain apt run already pushes CPU to about 50%.
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      # absorb short spikes from package installs
+      stabilizationWindowSeconds: 60
+    scaleDown:
+      # the default 300s is too slow to watch
+      stabilizationWindowSeconds: 60

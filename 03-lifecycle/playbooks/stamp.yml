@@ -1,0 +1,19 @@
+---
+# The webinar playbook: no package mirror and no dpkg lock, so it finishes in seconds on any demo VM.
+# It only rewrites /etc/motd, seen on every login. update.yml stays for real updates.
+- name: Stamp motd
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    updated_by: ansible
+
+  tasks:
+    - name: Write /etc/motd
+      ansible.builtin.copy:
+        dest: /etc/motd
+        mode: '0644'
+        content: |
+          {{ inventory_hostname_short }} · {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }} · kernel {{ ansible_facts['kernel'] }}
+          Maintained: {{ ansible_facts['date_time']['date'] }} {{ ansible_facts['date_time']['time'] }} {{ ansible_facts['date_time']['tz'] }}
+          Maintained by: {{ updated_by }}
