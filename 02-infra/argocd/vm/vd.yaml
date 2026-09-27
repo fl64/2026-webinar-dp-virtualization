@@ -5,7 +5,7 @@ metadata:
   name: demo-argocd-root
 spec:
   persistentVolumeClaim:
-    size: 10Gi
+    size: 4Gi
   dataSource:
     type: ObjectRef
     objectRef:
