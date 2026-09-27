@@ -48,6 +48,11 @@ spec:
             - openssh-server
             - qemu-guest-agent
             - stress-ng
+            - nginx
+          # The page names its replica, so curl through the Service shows which VM answered.
+          bootcmd:
+            - mkdir -p /var/www/html
+            - echo "<h1>$(hostname)</h1>" > /var/www/html/index.html
           write_files:
             # Not enabled on purpose: a playbook starts it, otherwise every new replica would
             # load itself and the pool would never scale back down. -t 5m stops the load itself.
@@ -66,6 +71,7 @@ spec:
           runcmd:
             - systemctl enable --now ssh
             - systemctl enable --now qemu-guest-agent
+            - systemctl enable --now nginx
             - systemctl daemon-reload
       blockDeviceRefs:
         - kind: VirtualDisk
@@ -82,6 +88,18 @@ spec:
           objectRef:
             kind: VirtualImage
             name: ubuntu-26-04-packer
+---
+# One Service over every replica: the pool label is set on each VM it creates.
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-ansible-vmpool
+  namespace: demo-webinar
+spec:
+  selector:
+    vmpool.virtualization.deckhouse.io/pool: demo-ansible-vmpool
+  ports:
+    - port: 80
 ---
 # An ordinary HPA drives the pool: VirtualMachinePool exposes the scale subresource.
 apiVersion: autoscaling/v2
