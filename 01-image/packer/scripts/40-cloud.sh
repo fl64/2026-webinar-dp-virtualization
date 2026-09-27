@@ -30,6 +30,16 @@ resize_rootfs: true
 EOF
 rm -f /etc/growroot-disabled
 
+# --- The boot loader goes to the clone's own disk -------------------------------------------
+# The installer records the build machine's disk by id in debconf (grub-pc/install_devices), and
+# a clone's disk has another serial: every grub-pc upgrade then fails with "does not exist, so
+# cannot grub-install to it" and leaves dpkg broken. grub_dpkg writes the disk the clone booted
+# from, once per instance, but is off unless configured.
+cat >/etc/cloud/cloud.cfg.d/90-grub-dpkg.cfg <<'EOF'
+grub_dpkg:
+  enabled: true
+EOF
+
 # --- The default user -----------------------------------------------------------------------
 # Root is locked and the build user is removed on first boot, so the only way in is the account
 # cloud-init creates. A bare `ssh_authorized_keys` in userData lands on this one; a full `users:`

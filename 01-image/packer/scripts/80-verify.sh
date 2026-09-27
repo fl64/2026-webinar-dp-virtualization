@@ -46,6 +46,8 @@ cloud_init_ok()  { command -v cloud-init >/dev/null 2>&1; }
 # wired up depends on the image. grep fails on a dangling symlink too.
 resolver_set()   { grep -q '^nameserver' /etc/resolv.conf; }
 dhcp_catch_all() { [ -f /etc/netplan/99-ethernet-dhcp.yaml ]; }
+# Only the setting can be checked here: the disk it writes exists on the clone, not on this machine.
+grub_dpkg_on()   { grep -qsx '  enabled: true' /etc/cloud/cloud.cfg.d/90-grub-dpkg.cfg; }
 
 echo "image acceptance:"
 check "guest agent enabled"       "systemctl is-enabled qemu-guest-agent.service"
@@ -67,6 +69,7 @@ check "console resizes on login"  console_resize
 check "efi fallback loader"       efi_fallback
 check "no swap"                   no_swap
 check "new nics get dhcp"         dhcp_catch_all
+check "grub disk set per clone"   grub_dpkg_on
 
 # What the image occupies: the build disk in ubuntu.pkr.hcl is sized after this.
 df -m / /boot/efi
