@@ -9,4 +9,4 @@ spec:
     type: ObjectRef
     objectRef:
       kind: VirtualImage
-      name: demo-ubuntu
+      name: ubuntu-26-04-packer

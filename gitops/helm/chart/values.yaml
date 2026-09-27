@@ -1,7 +1,7 @@
 name: demo-helm
 
-# The chart creates its own VirtualImage from this URL.
-imageUrl: https://mirror.yandex.ru/ubuntu-cloud-images/minimal/releases/resolute/release-20260723/ubuntu-26.04-minimal-cloudimg-amd64.img
+# Project image built by packer (classic/packer); the chart only references it.
+image: ubuntu-26-04-packer
 vmClass: generic
 storageClass: rv-thin-r1
 

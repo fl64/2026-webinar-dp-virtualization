@@ -23,10 +23,6 @@ spec:
     # Same cloud-init for every preview; the ApplicationSet patches only the fields that differ.
     userData: |
       #cloud-config
-      apt:
-        primary:
-          - arches: [default]
-            uri: http://mirror.yandex.ru/ubuntu
       package_update: true
       packages:
         - openssh-server
@@ -41,7 +37,6 @@ spec:
           lock_passwd: false
           ssh_authorized_keys:
             - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFVsaFrxjnt0m2m9HAP7Z/jhvEg61K/rJj+TDV0eTHcx demo@webinar2026
-      ssh_pwauth: true
       # bootcmd, not write_files: write_files runs once per instance and would skip a running VM.
       bootcmd:
         - mkdir -p /var/www/html

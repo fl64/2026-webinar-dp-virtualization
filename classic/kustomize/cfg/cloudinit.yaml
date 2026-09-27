@@ -8,7 +8,6 @@ users:
     lock_passwd: false
     ssh_authorized_keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFVsaFrxjnt0m2m9HAP7Z/jhvEg61K/rJj+TDV0eTHcx demo@webinar2026
-ssh_pwauth: true          # password SSH, used by the maintenance runs
 package_update: true
 packages:
   - openssh-server

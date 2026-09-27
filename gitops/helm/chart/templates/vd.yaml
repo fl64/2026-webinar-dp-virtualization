@@ -10,4 +10,4 @@ spec:
     type: ObjectRef
     objectRef:
       kind: VirtualImage
-      name: {{ .Values.name }}
+      name: {{ .Values.image }}

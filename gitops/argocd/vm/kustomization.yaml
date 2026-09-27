@@ -4,7 +4,6 @@ kind: Kustomization
 namespace: demo-webinar
 
 resources:
-  - vi.yaml
   - vd.yaml
   - vm.yaml
   - expose.yaml   # Service + Ingress + Certificate + NetworkPolicy

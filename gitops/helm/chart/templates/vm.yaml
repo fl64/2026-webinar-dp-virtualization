@@ -34,11 +34,6 @@ spec:
         list: |
           {{ .Values.user }}:{{ .Values.password }}
         expire: false
-      ssh_pwauth: true
-      apt:
-        primary:
-          - arches: [default]
-            uri: https://mirror.yandex.ru/ubuntu/
       package_update: true
       packages:
         # The minimal cloud image carries no guest agent, and without it the VM never reaches

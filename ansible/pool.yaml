@@ -1,6 +1,6 @@
 ---
 # AnsibleRun selects on the pool label, and plain ansible runs with --limit pool: the namespace
-# holds the other VMs of the demo too. The disks come from the project image, preflight/vi.yaml.
+# holds the other VMs of the demo too. The disks come from the project image, classic/packer.
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualMachinePool
 metadata:
@@ -31,7 +31,7 @@ spec:
         restartApprovalMode: Automatic
       provisioning:
         type: UserData
-        # Password SSH plus passwordless sudo: that is how the runner connects (see module/secret.yaml).
+        # Key SSH plus passwordless sudo: that is how the runner connects (keys/demo_ed25519).
         userData: |
           #cloud-config
           users:
@@ -41,10 +41,8 @@ spec:
               sudo: ALL=(ALL) NOPASSWD:ALL
               chpasswd: { expire: False }
               lock_passwd: false
-              # For local ansible runs; the in-cluster runner uses the password instead.
               ssh_authorized_keys:
                 - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFVsaFrxjnt0m2m9HAP7Z/jhvEg61K/rJj+TDV0eTHcx demo@webinar2026
-          ssh_pwauth: true
           package_update: true
           packages:
             - openssh-server
@@ -83,7 +81,7 @@ spec:
           type: ObjectRef
           objectRef:
             kind: VirtualImage
-            name: demo-ubuntu
+            name: ubuntu-26-04-packer
 ---
 # An ordinary HPA drives the pool: VirtualMachinePool exposes the scale subresource.
 apiVersion: autoscaling/v2

@@ -12,7 +12,6 @@ users:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFVsaFrxjnt0m2m9HAP7Z/jhvEg61K/rJj+TDV0eTHcx demo@webinar2026
 chpasswd:
   expire: false
-ssh_pwauth: true          # password SSH, used by the maintenance runs
 package_update: true
 packages:
   - qemu-guest-agent

@@ -3,7 +3,7 @@ kind: Kustomization
 
 namespace: demo-webinar
 
-# The VirtualImage is shared by the whole project, see preflight/vi.yaml.
+# The VirtualImage is shared by the whole project, see classic/packer.
 resources:
 - ./vm.yaml
 - ./vmd-root.yaml
