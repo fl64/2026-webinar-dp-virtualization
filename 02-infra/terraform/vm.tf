@@ -13,6 +13,11 @@ resource "kubernetes_secret_v1" "cloud_init" {
     userdata = local.vm_user_data
   }
 
+  # The platform marks the Secret with the VMs that use it; without this every apply strips the mark.
+  lifecycle {
+    ignore_changes = [metadata[0].annotations["virtualization.deckhouse.io/in-use-by-virtual-machines"]]
+  }
+
   wait_for_service_account_token = false
 
 }
