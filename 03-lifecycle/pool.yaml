@@ -1,6 +1,6 @@
 ---
 # AnsibleRun selects on the pool label, and plain ansible runs with --limit pool: the namespace
-# holds the other VMs of the demo too. The disks come from the project image, classic/packer.
+# holds the other VMs of the demo too. The disks come from the project image, 01-image/packer.
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualMachinePool
 metadata:

@@ -1,5 +1,5 @@
 # Installation ISO of the project: the ISO VM of step 1 boots from it, packer builds the project
-# image from it (classic/packer). The .iso extension is what makes the image attach as a CD-ROM.
+# image from it (01-image/packer). The .iso extension is what makes the image attach as a CD-ROM.
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualImage
 metadata:

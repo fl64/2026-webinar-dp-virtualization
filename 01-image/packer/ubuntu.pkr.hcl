@@ -7,7 +7,7 @@ packer {
   }
 }
 
-# The project image: Ubuntu Server installed from the ISO of step 1 (preflight/vi-iso.yaml),
+# The project image: Ubuntu Server installed from the ISO of step 1 (00-prep/vi-iso.yaml),
 # made into a cloud image by scripts/ and captured as a VirtualImage in the project.
 # Every VM of the demo starts from it.
 

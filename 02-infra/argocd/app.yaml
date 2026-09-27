@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: https://github.com/fl64/2026-webinar-dp-virtualization.git
     targetRevision: main
-    path: gitops/argocd/vm
+    path: 02-infra/argocd/vm
   destination:
     server: https://kubernetes.default.svc
     namespace: demo-webinar

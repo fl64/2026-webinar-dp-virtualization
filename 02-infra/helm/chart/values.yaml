@@ -1,6 +1,6 @@
 name: demo-helm
 
-# Project image built by packer (classic/packer); the chart only references it.
+# Project image built by packer (01-image/packer); the chart only references it.
 image: ubuntu-26-04-packer
 vmClass: generic
 storageClass: rv-thin-r1

@@ -18,5 +18,5 @@ spec:
     - server: https://kubernetes.default.svc
       namespace: demo-webinar
 
-  # No cluster-scoped kinds: the VM lives in the shared project from preflight/, Argo creates
+  # No cluster-scoped kinds: the VM lives in the shared project from 00-prep/, Argo creates
   # nothing outside its namespace.
