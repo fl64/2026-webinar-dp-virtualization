@@ -13,6 +13,6 @@ spec:
   values:
     name: demo-helm
     cpu:
-      cores: 2
+      cores: 1
       coreFraction: "10%"
     memory: 1Gi
