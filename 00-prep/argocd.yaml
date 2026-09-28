@@ -1,0 +1,397 @@
+# Argo CD that understands DVP resources: Argo knows no DVP phases, so without the health checks
+# below an Application never waits for its VM to run or its disk to provision. Needs the
+# operator-argo module. Login is the admin password from the argocd-cluster Secret.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+---
+apiVersion: argoproj.io/v1beta1
+kind: ArgoCD
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  controller:
+    appSync: 30s
+  server:
+    host: argo.pt.dvp.flant.dev
+    ingress:
+      enabled: true
+      tls:
+        - hosts:
+            - argo.pt.dvp.flant.dev
+          secretName: argocd-ingress-tls
+    # TLS ends at the ingress; with TLS on the API server too, HTTP→HTTPS redirects loop.
+    # https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#disable-internal-tls
+    insecure: true
+  # Phases from api/core/v1alpha2: Ready/Running/Attached/Bound → Healthy, Failed/*Lost → Degraded,
+  # everything else → Progressing.
+  resourceHealthChecks:
+    # VirtualImage
+    - group: virtualization.deckhouse.io
+      kind: VirtualImage
+      check: |
+        hs = {}
+        if obj.metadata ~= nil and obj.metadata.deletionTimestamp ~= nil then
+          hs.status = "Progressing"
+          hs.message = "VirtualImage is terminating"
+          return hs
+        end
+        if not obj.status or not obj.status.phase then
+          hs.status = "Progressing"
+          hs.message = "Waiting for VirtualImage status"
+          return hs
+        end
+        local phase = obj.status.phase
+        if phase == "Ready" then
+          hs.status = "Healthy"
+          hs.message = "VirtualImage ready"
+        elseif phase == "Failed" or phase == "ImageLost" or phase == "PVCLost" then
+          hs.status = "Degraded"
+          hs.message = "VirtualImage " .. phase .. ": " .. (obj.status.message or "unknown error")
+        elseif phase == "Pending" or phase == "Provisioning" or phase == "WaitForUserUpload" then
+          hs.status = "Progressing"
+          hs.message = "VirtualImage: " .. phase
+        else
+          hs.status = "Progressing"
+          hs.message = "VirtualImage: " .. phase
+        end
+        return hs
+
+    # ClusterVirtualImage
+    - group: virtualization.deckhouse.io
+      kind: ClusterVirtualImage
+      check: |
+        hs = {}
+        if obj.metadata ~= nil and obj.metadata.deletionTimestamp ~= nil then
+          hs.status = "Progressing"
+          hs.message = "ClusterVirtualImage is terminating"
+          return hs
+        end
+        if not obj.status or not obj.status.phase then
+          hs.status = "Progressing"
+          hs.message = "Waiting for ClusterVirtualImage status"
+          return hs
+        end
+        local phase = obj.status.phase
+        if phase == "Ready" then
+          hs.status = "Healthy"
+          hs.message = "ClusterVirtualImage ready"
+        elseif phase == "Failed" or phase == "ImageLost" or phase == "PVCLost" then
+          hs.status = "Degraded"
+          hs.message = "ClusterVirtualImage " .. phase .. ": " .. (obj.status.message or "unknown error")
+        elseif phase == "Pending" or phase == "Provisioning" or phase == "WaitForUserUpload" then
+          hs.status = "Progressing"
+          hs.message = "ClusterVirtualImage: " .. phase
+        else
+          hs.status = "Progressing"
+          hs.message = "ClusterVirtualImage: " .. phase
+        end
+        return hs
+
+    # VirtualDisk
+    - group: virtualization.deckhouse.io
+      kind: VirtualDisk
+      check: |
+        hs = {}
+        if obj.metadata ~= nil and obj.metadata.deletionTimestamp ~= nil then
+          hs.status = "Progressing"
+          hs.message = "VirtualDisk is terminating"
+          return hs
+        end
+        if not obj.status or not obj.status.phase then
+          hs.status = "Progressing"
+          hs.message = "Waiting for VirtualDisk status"
+          return hs
+        end
+        local phase = obj.status.phase
+        -- Migrating = online storage migration, disk is still usable
+        if phase == "Ready" or phase == "Migrating" then
+          hs.status = "Healthy"
+          hs.message = "VirtualDisk: " .. phase
+        elseif phase == "Failed" or phase == "PVCLost" then
+          hs.status = "Degraded"
+          hs.message = "VirtualDisk " .. phase .. ": " .. (obj.status.message or "unknown error")
+        elseif phase == "Pending" or phase == "Provisioning" or phase == "WaitForUserUpload" or phase == "WaitForFirstConsumer" or phase == "Resizing" or phase == "Exporting" then
+          hs.status = "Progressing"
+          hs.message = "VirtualDisk: " .. phase
+        else
+          hs.status = "Progressing"
+          hs.message = "VirtualDisk: " .. phase
+        end
+        return hs
+
+    # VirtualMachine
+    - group: virtualization.deckhouse.io
+      kind: VirtualMachine
+      check: |
+        hs = {}
+        if obj.metadata ~= nil and obj.metadata.deletionTimestamp ~= nil then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachine is terminating"
+          return hs
+        end
+        if not obj.status or not obj.status.phase then
+          hs.status = "Progressing"
+          hs.message = "Waiting for VirtualMachine status"
+          return hs
+        end
+        local phase = obj.status.phase
+        -- Stopped is a valid steady state (runPolicy may be Manual/AlwaysOff)
+        -- Migrating and Pause are transient but VM is functional
+        if phase == "Running" or phase == "Stopped" or phase == "Migrating" or phase == "Pause" then
+          hs.status = "Healthy"
+          hs.message = "VirtualMachine: " .. phase
+        elseif phase == "Degraded" then
+          hs.status = "Degraded"
+          hs.message = "VirtualMachine degraded: " .. (obj.status.message or "unknown error")
+        elseif phase == "Pending" or phase == "Starting" or phase == "Stopping" then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachine progressing: " .. phase
+        else
+          hs.status = "Progressing"
+          hs.message = "VirtualMachine: " .. phase
+        end
+        return hs
+
+    # VirtualMachineBlockDeviceAttachment — hotplug disk to a running VM
+    - group: virtualization.deckhouse.io
+      kind: VirtualMachineBlockDeviceAttachment
+      check: |
+        hs = {}
+        if obj.metadata ~= nil and obj.metadata.deletionTimestamp ~= nil then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineBlockDeviceAttachment is terminating"
+          return hs
+        end
+        if not obj.status or not obj.status.phase then
+          hs.status = "Progressing"
+          hs.message = "Waiting for VirtualMachineBlockDeviceAttachment status"
+          return hs
+        end
+        local phase = obj.status.phase
+        if phase == "Attached" then
+          hs.status = "Healthy"
+          hs.message = "VirtualMachineBlockDeviceAttachment attached"
+        elseif phase == "Failed" then
+          hs.status = "Degraded"
+          hs.message = "VirtualMachineBlockDeviceAttachment failed: " .. (obj.status.message or "unknown error")
+        elseif phase == "Pending" or phase == "InProgress" then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineBlockDeviceAttachment: " .. phase
+        else
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineBlockDeviceAttachment: " .. phase
+        end
+        return hs
+
+    # VirtualMachineClass
+    - group: virtualization.deckhouse.io
+      kind: VirtualMachineClass
+      check: |
+        hs = {}
+        if obj.metadata ~= nil and obj.metadata.deletionTimestamp ~= nil then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineClass is terminating"
+          return hs
+        end
+        if not obj.status or not obj.status.phase then
+          hs.status = "Progressing"
+          hs.message = "Waiting for VirtualMachineClass status"
+          return hs
+        end
+        local phase = obj.status.phase
+        if phase == "Ready" then
+          hs.status = "Healthy"
+          hs.message = "VirtualMachineClass ready"
+        elseif phase == "Pending" then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineClass: " .. phase
+        else
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineClass: " .. phase
+        end
+        return hs
+
+    # VirtualMachineIPAddress
+    - group: virtualization.deckhouse.io
+      kind: VirtualMachineIPAddress
+      check: |
+        hs = {}
+        if obj.metadata ~= nil and obj.metadata.deletionTimestamp ~= nil then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineIPAddress is terminating"
+          return hs
+        end
+        if not obj.status or not obj.status.phase then
+          hs.status = "Progressing"
+          hs.message = "Waiting for VirtualMachineIPAddress status"
+          return hs
+        end
+        local phase = obj.status.phase
+        if phase == "Bound" or phase == "Attached" then
+          hs.status = "Healthy"
+          hs.message = "VirtualMachineIPAddress: " .. phase
+        elseif phase == "Pending" then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineIPAddress: " .. phase
+        else
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineIPAddress: " .. phase
+        end
+        return hs
+
+
+    # VirtualMachineSnapshot
+    - group: virtualization.deckhouse.io
+      kind: VirtualMachineSnapshot
+      check: |
+        hs = {}
+        if obj.metadata ~= nil and obj.metadata.deletionTimestamp ~= nil then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineSnapshot is terminating"
+          return hs
+        end
+        if not obj.status or not obj.status.phase then
+          hs.status = "Progressing"
+          hs.message = "Waiting for VirtualMachineSnapshot status"
+          return hs
+        end
+        local phase = obj.status.phase
+        if phase == "Ready" then
+          hs.status = "Healthy"
+          hs.message = "VirtualMachineSnapshot ready"
+        elseif phase == "Failed" then
+          hs.status = "Degraded"
+          hs.message = "VirtualMachineSnapshot failed: " .. (obj.status.message or "unknown error")
+        elseif phase == "Pending" or phase == "InProgress" then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineSnapshot: " .. phase
+        else
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineSnapshot: " .. phase
+        end
+        return hs
+
+    # VirtualMachineRestore
+    - group: virtualization.deckhouse.io
+      kind: VirtualMachineRestore
+      check: |
+        hs = {}
+        if obj.metadata ~= nil and obj.metadata.deletionTimestamp ~= nil then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineRestore is terminating"
+          return hs
+        end
+        if not obj.status or not obj.status.phase then
+          hs.status = "Progressing"
+          hs.message = "Waiting for VirtualMachineRestore status"
+          return hs
+        end
+        local phase = obj.status.phase
+        if phase == "Ready" then
+          hs.status = "Healthy"
+          hs.message = "VirtualMachineRestore ready"
+        elseif phase == "Failed" then
+          hs.status = "Degraded"
+          hs.message = "VirtualMachineRestore failed: " .. (obj.status.message or "unknown error")
+        elseif phase == "Pending" or phase == "InProgress" then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineRestore: " .. phase
+        else
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineRestore: " .. phase
+        end
+        return hs
+
+    # VirtualDiskSnapshot
+    - group: virtualization.deckhouse.io
+      kind: VirtualDiskSnapshot
+      check: |
+        hs = {}
+        if obj.metadata ~= nil and obj.metadata.deletionTimestamp ~= nil then
+          hs.status = "Progressing"
+          hs.message = "VirtualDiskSnapshot is terminating"
+          return hs
+        end
+        if not obj.status or not obj.status.phase then
+          hs.status = "Progressing"
+          hs.message = "Waiting for VirtualDiskSnapshot status"
+          return hs
+        end
+        local phase = obj.status.phase
+        if phase == "Ready" then
+          hs.status = "Healthy"
+          hs.message = "VirtualDiskSnapshot ready"
+        elseif phase == "Failed" then
+          hs.status = "Degraded"
+          hs.message = "VirtualDiskSnapshot failed: " .. (obj.status.message or "unknown error")
+        elseif phase == "Pending" or phase == "InProgress" then
+          hs.status = "Progressing"
+          hs.message = "VirtualDiskSnapshot: " .. phase
+        else
+          hs.status = "Progressing"
+          hs.message = "VirtualDiskSnapshot: " .. phase
+        end
+        return hs
+
+
+    # VirtualMachineMACAddress
+    - group: virtualization.deckhouse.io
+      kind: VirtualMachineMACAddress
+      check: |
+        hs = {}
+        if obj.metadata ~= nil and obj.metadata.deletionTimestamp ~= nil then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineMACAddress is terminating"
+          return hs
+        end
+        if not obj.status or not obj.status.phase then
+          hs.status = "Progressing"
+          hs.message = "Waiting for VirtualMachineMACAddress status"
+          return hs
+        end
+        local phase = obj.status.phase
+        if phase == "Bound" or phase == "Attached" then
+          hs.status = "Healthy"
+          hs.message = "VirtualMachineMACAddress: " .. phase
+        elseif phase == "Pending" then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineMACAddress: " .. phase
+        else
+          hs.status = "Progressing"
+          hs.message = "VirtualMachineMACAddress: " .. phase
+        end
+        return hs
+
+  # KubeVirt and CDI objects are created by the DVP controllers, not by the Application; Cilium
+  # identities only add noise to the tree.
+  resourceExclusions: |
+    - apiGroups:
+      - internal.virtualization.deckhouse.io
+      - cdi.internal.virtualization.deckhouse.io
+      kinds:
+      - "*"
+      clusters:
+      - "*"
+    - apiGroups:
+      - cilium.io
+      kinds:
+      - CiliumIdentity
+      - CiliumEndpoint
+      clusters:
+      - "*"
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: argocd-ingress
+  namespace: argocd
+spec:
+  dnsNames:
+    - argo.pt.dvp.flant.dev
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+  secretName: argocd-ingress-tls
