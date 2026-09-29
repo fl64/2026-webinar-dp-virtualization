@@ -14,18 +14,19 @@ packages:
   - qemu-guest-agent
   - nginx
 # bootcmd, not write_files: write_files runs once per instance and would skip an existing VM.
+# Unquoted heredoc: every overlay VM prints its own hostname, the page is not patched per overlay.
 bootcmd:
   - mkdir -p /var/www/html
   - |
-    cat > /var/www/html/index.html <<'HTML'
+    cat > /var/www/html/index.html <<HTML
     <!doctype html>
     <html>
       <head>
         <meta charset="utf-8">
-        <title>demo-kustomize</title>
+        <title>$(hostname)</title>
       </head>
       <body>
-        <h1>demo-kustomize</h1>
+        <h1>$(hostname)</h1>
         <p>Hello, kustomize!</p>
       </body>
     </html>

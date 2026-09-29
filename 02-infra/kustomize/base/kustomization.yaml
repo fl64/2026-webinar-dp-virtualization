@@ -6,8 +6,11 @@ namespace: demo-webinar
 # The VirtualImage is shared by the whole project, see 01-image/packer.
 resources:
 - ./vm.yaml
-- ./vmd-root.yaml
+- ./vd.yaml
 - ./expose.yaml   # Service + Ingress + Certificate + NetworkPolicy
+
+configurations:
+- ./transformer.yaml
 
 generatorOptions:
   disableNameSuffixHash: true

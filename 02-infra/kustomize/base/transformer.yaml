@@ -1,0 +1,221 @@
+# kustomize transformer configuration for the virtualization CRDs.
+# https://github.com/kubernetes-sigs/kustomize/blob/master/examples/transformerconfigs/README.md
+#
+# nameReference teaches kustomize which field of one resource holds the name of
+# another, so a rename (namePrefix, nameSuffix, a generator hash) rewrites every
+# reference to it. Without an entry here the disk keeps pointing at an image
+# name that no longer exists.
+#
+# namespace lists the fields the build's namespace is substituted into: the
+# references a cluster-scoped resource makes into a namespace.
+#
+# Paths checked against the virtualization.deckhouse.io CRD schemas in the
+# cluster, VirtualMachinePool included: it holds the same references one level
+# down, under virtualMachineTemplate.
+
+namespace:
+  # A cluster-scoped image takes its data from an object inside a namespace.
+  - kind: ClusterVirtualImage
+    path: spec/dataSource/objectRef/namespace
+  - kind: ClusterVirtualImage
+    path: spec/dataSource/containerImage/imagePullSecret/namespace
+  # Leases are cluster-scoped and point at a namespaced address.
+  - kind: VirtualMachineIPAddressLease
+    path: spec/virtualMachineIPAddressRef/namespace
+  - kind: VirtualMachineMACAddressLease
+    path: spec/virtualMachineMACAddressRef/namespace
+
+nameReference:
+  # ---------- data sources for disks and images ----------
+  - kind: VirtualImage
+    fieldSpecs:
+      - path: spec/dataSource/objectRef/name
+        kind: VirtualImage
+      - path: spec/dataSource/objectRef/name
+        kind: ClusterVirtualImage
+      - path: spec/dataSource/objectRef/name
+        kind: VirtualDisk
+      - path: spec/virtualDiskTemplates/spec/dataSource/objectRef/name
+        kind: VirtualMachinePool
+      - path: spec/blockDeviceRefs/name
+        kind: VirtualMachine
+      - path: spec/virtualMachineTemplate/spec/blockDeviceRefs/name
+        kind: VirtualMachinePool
+      - path: spec/blockDeviceRef/name
+        kind: VirtualMachineBlockDeviceAttachment
+
+  - kind: ClusterVirtualImage
+    fieldSpecs:
+      - path: spec/dataSource/objectRef/name
+        kind: VirtualImage
+      - path: spec/dataSource/objectRef/name
+        kind: ClusterVirtualImage
+      - path: spec/dataSource/objectRef/name
+        kind: VirtualDisk
+      - path: spec/virtualDiskTemplates/spec/dataSource/objectRef/name
+        kind: VirtualMachinePool
+      - path: spec/blockDeviceRefs/name
+        kind: VirtualMachine
+      - path: spec/virtualMachineTemplate/spec/blockDeviceRefs/name
+        kind: VirtualMachinePool
+      - path: spec/blockDeviceRef/name
+        kind: VirtualMachineBlockDeviceAttachment
+
+  - kind: VirtualDisk
+    fieldSpecs:
+      - path: spec/dataSource/objectRef/name
+        kind: VirtualImage
+      - path: spec/dataSource/objectRef/name
+        kind: ClusterVirtualImage
+      - path: spec/blockDeviceRefs/name
+        kind: VirtualMachine
+      - path: spec/blockDeviceRef/name
+        kind: VirtualMachineBlockDeviceAttachment
+      - path: spec/virtualDiskName
+        kind: VirtualDiskSnapshot
+      # A pool's blockDeviceRefs entry with kind VirtualDisk names an entry of
+      # spec/virtualDiskTemplates, not a VirtualDisk object — renaming it would
+      # break the template binding, so it is deliberately absent here.
+
+  - kind: VirtualDiskSnapshot
+    fieldSpecs:
+      - path: spec/dataSource/objectRef/name
+        kind: VirtualDisk
+      - path: spec/dataSource/objectRef/name
+        kind: VirtualImage
+      - path: spec/dataSource/objectRef/name
+        kind: ClusterVirtualImage
+      - path: spec/virtualDiskTemplates/spec/dataSource/objectRef/name
+        kind: VirtualMachinePool
+
+  # ---------- references to the VM itself ----------
+  - kind: VirtualMachine
+    fieldSpecs:
+      - path: spec/virtualMachineName
+        kind: VirtualMachineBlockDeviceAttachment
+      - path: spec/virtualMachineName
+        kind: VirtualMachineOperation
+      - path: spec/virtualMachineName
+        kind: VirtualMachineSnapshot
+
+  # ---------- snapshots and restore ----------
+  - kind: VirtualMachineSnapshot
+    fieldSpecs:
+      - path: spec/virtualMachineSnapshotName
+        kind: VirtualMachineRestore
+      - path: spec/virtualMachineSnapshotName
+        kind: VirtualMachineSnapshotOperation
+      - path: spec/restore/virtualMachineSnapshotName
+        kind: VirtualMachineOperation
+
+  # ---------- VM class ----------
+  - kind: VirtualMachineClass
+    fieldSpecs:
+      - path: spec/virtualMachineClassName
+        kind: VirtualMachine
+      - path: spec/virtualMachineTemplate/spec/virtualMachineClassName
+        kind: VirtualMachinePool
+
+  # ---------- addresses ----------
+  - kind: VirtualMachineIPAddress
+    fieldSpecs:
+      - path: spec/virtualMachineIPAddressName
+        kind: VirtualMachine
+      - path: spec/virtualMachineTemplate/spec/virtualMachineIPAddressName
+        kind: VirtualMachinePool
+      - path: spec/virtualMachineIPAddressRef/name
+        kind: VirtualMachineIPAddressLease
+
+  - kind: VirtualMachineMACAddress
+    fieldSpecs:
+      # Static MAC on an additional (Network / ClusterNetwork) interface.
+      - path: spec/networks/virtualMachineMACAddressName
+        kind: VirtualMachine
+      - path: spec/virtualMachineTemplate/spec/networks/virtualMachineMACAddressName
+        kind: VirtualMachinePool
+      - path: spec/virtualMachineMACAddressRef/name
+        kind: VirtualMachineMACAddressLease
+
+  # ---------- device passthrough ----------
+  # The GPUClass CRD arrives with the gpu module; until then this rule never
+  # matches anything, which is harmless.
+  - kind: GPUClass
+    fieldSpecs:
+      - path: spec/gpus/gpuClassName
+        kind: VirtualMachine
+      - path: spec/virtualMachineTemplate/spec/gpus/gpuClassName
+        kind: VirtualMachinePool
+
+  - kind: USBDevice
+    fieldSpecs:
+      - path: spec/usbDevices/name
+        kind: VirtualMachine
+      - path: spec/virtualMachineTemplate/spec/usbDevices/name
+        kind: VirtualMachinePool
+
+  # ---------- provisioning and registry credentials ----------
+  - kind: Secret
+    fieldSpecs:
+      - path: spec/provisioning/userDataRef/name
+        kind: VirtualMachine
+      # Windows provisioning: .data.autounattend.xml / .data.unattend.xml.
+      - path: spec/provisioning/sysprepRef/name
+        kind: VirtualMachine
+      - path: spec/virtualMachineTemplate/spec/provisioning/userDataRef/name
+        kind: VirtualMachinePool
+      - path: spec/virtualMachineTemplate/spec/provisioning/sysprepRef/name
+        kind: VirtualMachinePool
+      # Credentials for a private container registry.
+      - path: spec/dataSource/containerImage/imagePullSecret/name
+        kind: VirtualImage
+      - path: spec/dataSource/containerImage/imagePullSecret/name
+        kind: ClusterVirtualImage
+      - path: spec/dataSource/containerImage/imagePullSecret/name
+        kind: VirtualDisk
+      - path: spec/virtualDiskTemplates/spec/dataSource/containerImage/imagePullSecret/name
+        kind: VirtualMachinePool
+
+  # ---------- cluster resources a VM refers to ----------
+  - kind: StorageClass
+    fieldSpecs:
+      - path: spec/persistentVolumeClaim/storageClassName
+        kind: VirtualDisk
+      - path: spec/persistentVolumeClaim/storageClassName
+        kind: VirtualImage
+      - path: spec/virtualDiskTemplates/spec/persistentVolumeClaim/storageClassName
+        kind: VirtualMachinePool
+
+  - kind: PriorityClass
+    fieldSpecs:
+      - path: spec/priorityClassName
+        kind: VirtualMachine
+      - path: spec/virtualMachineTemplate/spec/priorityClassName
+        kind: VirtualMachinePool
+
+  # ---------- additional networks (sdn module) ----------
+  # spec.networks[].name is the name of a Network or of a ClusterNetwork; the
+  # type field next to it says which, so both kinds claim the same path.
+  - kind: Network
+    fieldSpecs:
+      - path: spec/networks/name
+        kind: VirtualMachine
+      - path: spec/virtualMachineTemplate/spec/networks/name
+        kind: VirtualMachinePool
+
+  - kind: ClusterNetwork
+    fieldSpecs:
+      - path: spec/networks/name
+        kind: VirtualMachine
+      - path: spec/virtualMachineTemplate/spec/networks/name
+        kind: VirtualMachinePool
+
+  - kind: IPAddress
+    # Group pinned: IPAddress is a generic kind name and this one belongs to the
+    # SDN module, so an unqualified rule could claim a same-named kind.
+    group: network.deckhouse.io
+    fieldSpecs:
+      # Static IP on an additional interface, allocated by the SDN module.
+      - path: spec/networks/ipAddressName
+        kind: VirtualMachine
+      - path: spec/virtualMachineTemplate/spec/networks/ipAddressName
+        kind: VirtualMachinePool

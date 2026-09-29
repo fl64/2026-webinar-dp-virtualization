@@ -1,0 +1,53 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../base
+
+nameSuffix: -prod
+
+# Fields listed by hand: includeSelectors would also put the label into the NetworkPolicy rule
+# for the ingress controller pods, and ingress traffic would stop.
+labels:
+  - pairs:
+      vm: demo-kustomize-prod
+    fields:
+      - kind: Service
+        path: spec/selector
+        create: false
+      - kind: NetworkPolicy
+        path: spec/podSelector/matchLabels
+        create: false
+
+# kustomize renames resources, but not the host and the TLS Secret inside them.
+patches:
+  - target:
+      kind: Ingress
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: demo-kustomize-prod.pt.dvp.flant.dev
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: demo-kustomize-prod.pt.dvp.flant.dev
+      - op: replace
+        path: /spec/tls/0/secretName
+        value: demo-kustomize-prod-tls
+  - target:
+      kind: Certificate
+    patch: |-
+      - op: replace
+        path: /spec/dnsNames/0
+        value: demo-kustomize-prod.pt.dvp.flant.dev
+      - op: replace
+        path: /spec/secretName
+        value: demo-kustomize-prod-tls
+  - target:
+      kind: VirtualMachine
+    patch: |-
+      - op: replace
+        path: /spec/cpu/cores
+        value: 2
+      - op: replace
+        path: /spec/memory/size
+        value: 2Gi
