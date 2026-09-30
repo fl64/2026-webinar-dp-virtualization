@@ -1,0 +1,11 @@
+# Installation ISO for the whole cluster: the ISO VM of step 1 boots from it, packer builds the
+# project image from it (01-image/packer). The .iso extension is what makes the image attach as a CD-ROM.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: ClusterVirtualImage
+metadata:
+  name: demo-iso
+spec:
+  dataSource:
+    type: HTTP
+    http:
+      url: https://mirror.yandex.ru/ubuntu-releases/26.04/ubuntu-26.04-live-server-amd64.iso

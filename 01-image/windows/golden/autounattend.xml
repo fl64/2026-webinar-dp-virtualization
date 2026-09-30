@@ -12,7 +12,7 @@
   <settings pass="windowsPE">
 
     <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-      <!-- en-US: the evaluation ISO behind the link in vi-images.yaml carries no other UI
+      <!-- en-US: the evaluation ISO behind the link in cvi-images.yaml carries no other UI
            language, and Setup drops an unknown one and stops on the language page. -->
       <SetupUILanguage>
         <UILanguage>en-US</UILanguage>

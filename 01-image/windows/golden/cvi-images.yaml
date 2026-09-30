@@ -1,24 +1,20 @@
 ---
-# Project images, applied apart from the kustomization: the build VM goes in only once both are Ready.
+# Cluster-scoped, so they stay out of the kustomization: its namespace transformer would stamp one on.
 apiVersion: virtualization.deckhouse.io/v1alpha2
-kind: VirtualImage
+kind: ClusterVirtualImage
 metadata:
   name: demo-win-iso
-  namespace: demo-webinar
 spec:
-  storage: ContainerRegistry
   dataSource:
     type: HTTP
     http:
       url: https://go.microsoft.com/fwlink/p/?LinkID=2195280
 ---
 apiVersion: virtualization.deckhouse.io/v1alpha2
-kind: VirtualImage
+kind: ClusterVirtualImage
 metadata:
   name: demo-win-virtio
-  namespace: demo-webinar
 spec:
-  storage: ContainerRegistry
   dataSource:
     type: HTTP
     http:

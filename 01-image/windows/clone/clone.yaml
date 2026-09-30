@@ -8,7 +8,7 @@ spec:
   dataSource:
     type: ObjectRef
     objectRef:
-      kind: ClusterVirtualImage
+      kind: VirtualImage
       name: demo-win-golden
 ---
 apiVersion: virtualization.deckhouse.io/v1alpha2

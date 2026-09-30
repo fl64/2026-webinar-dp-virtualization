@@ -1,13 +1,14 @@
 ---
-# Cluster-scoped, taken off the disk restored from the snapshot in snapshot.yaml.
+# A project image, taken off the disk restored from the snapshot in snapshot.yaml.
 apiVersion: virtualization.deckhouse.io/v1alpha2
-kind: ClusterVirtualImage
+kind: VirtualImage
 metadata:
   name: demo-win-golden
+  namespace: demo-webinar
 spec:
+  storage: ContainerRegistry
   dataSource:
     type: ObjectRef
     objectRef:
       kind: VirtualDisk
       name: demo-win-golden
-      namespace: demo-webinar

@@ -16,7 +16,7 @@ spec:
   memory:
     size: 2Gi
   blockDeviceRefs:
-    - kind: VirtualImage
+    - kind: ClusterVirtualImage
       name: demo-iso
     - kind: VirtualDisk
       name: demo-iso-root

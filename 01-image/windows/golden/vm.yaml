@@ -36,12 +36,12 @@ spec:
   # ISO first: with no bootloader on the disk OVMF drops into the UEFI shell instead of
   # falling through to the next entry.
   blockDeviceRefs:
-    - kind: VirtualImage
+    - kind: ClusterVirtualImage
       name: demo-win-iso
       bootOrder: 1
     - kind: VirtualDisk
       name: demo-win-build-root
       bootOrder: 2
-    - kind: VirtualImage
+    - kind: ClusterVirtualImage
       name: demo-win-virtio
       bootOrder: 3

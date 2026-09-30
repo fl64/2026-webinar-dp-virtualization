@@ -7,7 +7,7 @@ packer {
   }
 }
 
-# The project image: Ubuntu Server installed from the ISO of step 1 (01-image/vi-iso.yaml),
+# The project image: Ubuntu Server installed from the ISO of step 1 (01-image/cvi-iso.yaml),
 # made into a cloud image by scripts/ and captured as a VirtualImage in the project.
 # Every VM of the demo starts from it.
 
@@ -42,7 +42,7 @@ source "deckhouse-virtualization" "ubuntu" {
 
   iso {
     object_ref {
-      kind = "VirtualImage"
+      kind = "ClusterVirtualImage"
       name = "demo-iso"
     }
   }
