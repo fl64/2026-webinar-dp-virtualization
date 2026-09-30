@@ -10,7 +10,7 @@ spec:
   runPolicy: AlwaysOnUnlessStoppedManually
   # The demo moves the VM by changing this name in git; use node names from your cluster.
   nodeSelector:
-    kubernetes.io/hostname: virtlab-pt-1
+    kubernetes.io/hostname: virtlab-pt-2
   cpu:
     cores: 1
     coreFraction: 10%
