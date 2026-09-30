@@ -18,7 +18,7 @@ variable "namespace" {
 
 variable "image_name" {
   type    = string
-  default = "ubuntu-26-04-packer"
+  default = "demo-ubuntu-26-04-packer"
 }
 
 # Build machine sizing. Does not affect image contents, only how fast it builds.
@@ -43,7 +43,7 @@ source "deckhouse-virtualization" "ubuntu" {
   iso {
     object_ref {
       kind = "ClusterVirtualImage"
-      name = "demo-iso"
+      name = "demo-ubuntu-26-04-iso"
     }
   }
 

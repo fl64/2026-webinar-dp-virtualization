@@ -3,7 +3,7 @@
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualImage
 metadata:
-  name: demo-win-golden
+  name: demo-windows-server-2022-golden
   namespace: demo-webinar
 spec:
   storage: ContainerRegistry

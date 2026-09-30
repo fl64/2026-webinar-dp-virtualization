@@ -15,7 +15,7 @@ root_disk_size = "4Gi"
 # The project-wide image from 01-image/packer, the one the kubectl, kustomize and pool disks use too.
 disk_data_source_type = "ObjectRef"
 disk_object_ref_kind  = "VirtualImage"
-disk_object_ref_name  = "ubuntu-26-04-packer"
+disk_object_ref_name  = "demo-ubuntu-26-04-packer"
 
 vm_labels = {
   "vm"         = "demo-tf"

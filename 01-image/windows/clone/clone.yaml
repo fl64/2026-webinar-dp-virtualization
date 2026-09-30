@@ -9,7 +9,7 @@ spec:
     type: ObjectRef
     objectRef:
       kind: VirtualImage
-      name: demo-win-golden
+      name: demo-windows-server-2022-golden
 ---
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualMachine

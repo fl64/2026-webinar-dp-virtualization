@@ -17,6 +17,6 @@ spec:
     size: 2Gi
   blockDeviceRefs:
     - kind: ClusterVirtualImage
-      name: demo-iso
+      name: demo-ubuntu-26-04-iso
     - kind: VirtualDisk
       name: demo-iso-root

@@ -37,11 +37,11 @@ spec:
   # falling through to the next entry.
   blockDeviceRefs:
     - kind: ClusterVirtualImage
-      name: demo-win-iso
+      name: demo-windows-server-2022-iso
       bootOrder: 1
     - kind: VirtualDisk
       name: demo-win-build-root
       bootOrder: 2
     - kind: ClusterVirtualImage
-      name: demo-win-virtio
+      name: demo-virtio-win-0-1-302-iso
       bootOrder: 3

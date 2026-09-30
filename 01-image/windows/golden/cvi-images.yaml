@@ -3,7 +3,7 @@
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: ClusterVirtualImage
 metadata:
-  name: demo-win-iso
+  name: demo-windows-server-2022-iso
 spec:
   dataSource:
     type: HTTP
@@ -13,7 +13,7 @@ spec:
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: ClusterVirtualImage
 metadata:
-  name: demo-win-virtio
+  name: demo-virtio-win-0-1-302-iso
 spec:
   dataSource:
     type: HTTP
