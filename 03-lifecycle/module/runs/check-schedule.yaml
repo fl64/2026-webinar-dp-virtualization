@@ -1,0 +1,27 @@
+---
+# Every hour a read-only run lists web VMs with pending updates; demo-pool-nightly installs them.
+apiVersion: ansible.deckhouse.io/v1alpha1
+kind: AnsibleRunSchedule
+metadata:
+  name: demo-pool-hourly
+  namespace: demo-webinar
+spec:
+  schedule: "0 * * * *"
+  timeZone: "Europe/Moscow"
+  template:
+    spec:
+      playbook:
+        type: Git
+        git:
+          url: https://github.com/fl64/2026-webinar-dp-virtualization.git
+          revision: main
+          path: 03-lifecycle/playbooks/check-updates.yml
+      target:
+        type: VirtualMachines
+        virtualMachines:
+          selector:
+            matchLabels:
+              role: web
+      connection:
+        secretRef:
+          name: demo-pool
