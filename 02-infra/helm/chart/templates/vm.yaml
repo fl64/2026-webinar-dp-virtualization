@@ -5,6 +5,8 @@ metadata:
   labels:
     app: {{ .Values.name }}
     role: web
+  annotations:
+    ansible.deckhouse.io/groups: web
 spec:
   virtualMachineClassName: {{ .Values.vmClass }}
   runPolicy: AlwaysOnUnlessStoppedManually

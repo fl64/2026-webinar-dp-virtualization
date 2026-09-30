@@ -69,6 +69,8 @@ metadata:
   labels:
     vm: demo-kubectl
     role: web
+  annotations:
+    ansible.deckhouse.io/groups: web
 spec:
   virtualMachineClassName: generic
   runPolicy: AlwaysOnUnlessStoppedManually
@@ -160,11 +162,17 @@ spec:
       ports:
         - protocol: TCP
           port: 80
-    # SSH from the maintenance runner pods.
+    # SSH from the maintenance runner pods and from virt-api, which carries d8 v port-forward.
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: d8-ansible
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: d8-virtualization
+          podSelector:
+            matchLabels:
+              kubevirt.internal.virtualization.deckhouse.io: virt-api
       ports:
         - protocol: TCP
           port: 22

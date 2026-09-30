@@ -1,6 +1,6 @@
 ---
-# AnsibleRun selects on the pool label, and plain ansible runs with --limit pool: the namespace
-# holds the other VMs of the demo too. The disks come from the project image, 01-image/packer.
+# Replicas are web VMs like the others: AnsibleRun selects on role=web, plain ansible on the web
+# group. The disks come from the project image, 01-image/packer.
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualMachinePool
 metadata:
@@ -15,7 +15,7 @@ spec:
         role: web
       annotations:
         # the ansible group of every replica in `d8 v ansible-inventory`
-        provisioning.virtualization.deckhouse.io/groups: pool
+        ansible.deckhouse.io/groups: pool,web
     spec:
       runPolicy: AlwaysOnUnlessStoppedManually
       virtualMachineClassName: generic
@@ -88,6 +88,61 @@ spec:
           objectRef:
             kind: VirtualImage
             name: demo-ubuntu-26-04-packer
+---
+# Same rules as the other web VMs: page on 80 from the project (the rotation check curls the Service
+# from a pod), SSH from the maintenance runner pods and from virt-api, which carries d8 v port-forward.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: demo-pool
+  namespace: demo-webinar
+spec:
+  podSelector:
+    matchLabels:
+      vmpool.virtualization.deckhouse.io/pool: demo-pool
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 80
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: d8-ansible
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: d8-virtualization
+          podSelector:
+            matchLabels:
+              kubevirt.internal.virtualization.deckhouse.io: virt-api
+      ports:
+        - protocol: TCP
+          port: 22
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # 80/443 for cloud-init and apt, 123 for NTP.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+        - protocol: UDP
+          port: 123
 ---
 # One Service over every replica: the pool label is set on each VM it creates.
 apiVersion: v1

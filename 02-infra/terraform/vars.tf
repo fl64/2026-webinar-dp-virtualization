@@ -137,6 +137,12 @@ variable "vm_labels" {
   default     = {}
 }
 
+variable "vm_annotations" {
+  description = "Annotations for the VirtualMachine"
+  type        = map(string)
+  default     = {}
+}
+
 variable "disk_labels" {
   description = "Labels for the VirtualDisk"
   type        = map(string)

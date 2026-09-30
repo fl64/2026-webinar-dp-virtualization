@@ -24,6 +24,11 @@ vm_labels = {
   "managed-by" = "terraform"
 }
 
+# Group in the inventory of d8 v ansible-inventory.
+vm_annotations = {
+  "ansible.deckhouse.io/groups" = "web"
+}
+
 disk_labels = {
   "vm"         = "demo-terraform"
   "disk"       = "root"

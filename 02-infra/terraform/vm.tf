@@ -27,9 +27,10 @@ resource "kubernetes_manifest" "vm" {
     "apiVersion" = "virtualization.deckhouse.io/v1alpha2"
     "kind"       = "VirtualMachine"
     "metadata" = {
-      "name"      = var.vm_name
-      "namespace" = var.namespace
-      "labels"    = var.vm_labels
+      "name"        = var.vm_name
+      "namespace"   = var.namespace
+      "labels"      = var.vm_labels
+      "annotations" = var.vm_annotations
     }
     "spec" = merge(
       {
