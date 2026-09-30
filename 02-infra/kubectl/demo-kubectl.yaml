@@ -108,7 +108,7 @@ metadata:
 spec:
   certificateOwnerRef: false
   dnsNames:
-    - demo-kubectl.pt.dvp.flant.dev
+    - demo-kubectl.d8-virtualization.ru
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt
@@ -122,7 +122,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: demo-kubectl.pt.dvp.flant.dev
+    - host: demo-kubectl.d8-virtualization.ru
       http:
         paths:
           - path: /
@@ -134,7 +134,7 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - demo-kubectl.pt.dvp.flant.dev
+        - demo-kubectl.d8-virtualization.ru
       secretName: demo-kubectl-tls
 ---
 apiVersion: networking.k8s.io/v1

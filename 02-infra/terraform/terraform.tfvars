@@ -33,7 +33,7 @@ disk_labels = {
 vm_restart_approval_mode = "Automatic"
 
 # Exposure: Service + Ingress + Certificate + NetworkPolicy.
-ingress_host = "demo-terraform.pt.dvp.flant.dev"
+ingress_host = "demo-terraform.d8-virtualization.ru"
 
 vm_provisioning_type      = "UserDataRef"
 vm_cloud_init_secret_name = "demo-terraform"

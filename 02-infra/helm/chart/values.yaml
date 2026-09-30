@@ -25,6 +25,6 @@ sshPublicKey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFVsaFrxjnt0m2m9HAP7Z/jhvEg61K
 restartApprovalMode: Automatic
 
 ingress:
-  host: demo-helm.pt.dvp.flant.dev
+  host: demo-helm.d8-virtualization.ru
   className: nginx
   issuer: letsencrypt        # ClusterIssuer name

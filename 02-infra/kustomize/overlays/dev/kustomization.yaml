@@ -26,10 +26,10 @@ patches:
     patch: |-
       - op: replace
         path: /spec/rules/0/host
-        value: demo-kustomize-dev.pt.dvp.flant.dev
+        value: demo-kustomize-dev.d8-virtualization.ru
       - op: replace
         path: /spec/tls/0/hosts/0
-        value: demo-kustomize-dev.pt.dvp.flant.dev
+        value: demo-kustomize-dev.d8-virtualization.ru
       - op: replace
         path: /spec/tls/0/secretName
         value: demo-kustomize-dev-tls
@@ -38,7 +38,7 @@ patches:
     patch: |-
       - op: replace
         path: /spec/dnsNames/0
-        value: demo-kustomize-dev.pt.dvp.flant.dev
+        value: demo-kustomize-dev.d8-virtualization.ru
       - op: replace
         path: /spec/secretName
         value: demo-kustomize-dev-tls

@@ -19,7 +19,7 @@ metadata:
 spec:
   certificateOwnerRef: false
   dnsNames:
-    - demo-kustomize.pt.dvp.flant.dev
+    - demo-kustomize.d8-virtualization.ru
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt
@@ -32,7 +32,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: demo-kustomize.pt.dvp.flant.dev
+    - host: demo-kustomize.d8-virtualization.ru
       http:
         paths:
           - path: /
@@ -44,7 +44,7 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - demo-kustomize.pt.dvp.flant.dev
+        - demo-kustomize.d8-virtualization.ru
       secretName: demo-kustomize-tls
 ---
 apiVersion: networking.k8s.io/v1

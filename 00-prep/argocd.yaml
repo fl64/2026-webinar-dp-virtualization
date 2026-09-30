@@ -15,12 +15,12 @@ spec:
   controller:
     appSync: 30s
   server:
-    host: argo.pt.dvp.flant.dev
+    host: argo.d8-virtualization.ru
     ingress:
       enabled: true
       tls:
         - hosts:
-            - argo.pt.dvp.flant.dev
+            - argo.d8-virtualization.ru
           secretName: argocd-ingress-tls
     # TLS ends at the ingress; with TLS on the API server too, HTTP→HTTPS redirects loop.
     # https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#disable-internal-tls
@@ -390,7 +390,7 @@ metadata:
   namespace: argocd
 spec:
   dnsNames:
-    - argo.pt.dvp.flant.dev
+    - argo.d8-virtualization.ru
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt
