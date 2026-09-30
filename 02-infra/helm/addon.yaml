@@ -9,7 +9,7 @@ spec:
     helmClusterAddonRepository: demo-helm
     helmClusterAddonChart: demo-helm # operator resolves it to <repository>-chart-<chart>
     # Pinned: a chart change needs a version bump, a re-publish and a resync; values apply at once.
-    version: 0.7.1
+    version: 0.7.2
   values:
     name: demo-helm
     cpu:

@@ -68,7 +68,7 @@ metadata:
   namespace: demo-webinar
   labels:
     vm: demo-kubectl
-    role: demo
+    role: web
 spec:
   virtualMachineClassName: generic
   runPolicy: AlwaysOnUnlessStoppedManually

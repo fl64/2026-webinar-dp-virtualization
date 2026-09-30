@@ -4,6 +4,7 @@ metadata:
   name: {{ .Values.name }}
   labels:
     app: {{ .Values.name }}
+    role: web
 spec:
   virtualMachineClassName: {{ .Values.vmClass }}
   runPolicy: AlwaysOnUnlessStoppedManually

@@ -20,7 +20,7 @@ disk_object_ref_name  = "demo-ubuntu-26-04-packer"
 vm_labels = {
   "vm"         = "demo-terraform"
   "app"        = "ubuntu"
-  "role"       = "demo" # selector for maintenance runs
+  "role"       = "web" # selector for maintenance runs
   "managed-by" = "terraform"
 }
 

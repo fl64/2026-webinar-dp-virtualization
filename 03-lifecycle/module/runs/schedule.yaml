@@ -25,7 +25,7 @@ spec:
         virtualMachines:
           selector:
             matchLabels:
-              vmpool.virtualization.deckhouse.io/pool: demo-pool
+              role: web
       connection:
         secretRef:
           name: demo-pool

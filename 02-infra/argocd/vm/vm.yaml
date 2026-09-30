@@ -5,6 +5,7 @@ metadata:
   name: demo-argocd
   labels:
     vm: demo-argocd
+    role: web
 spec:
   virtualMachineClassName: generic
   runPolicy: AlwaysOnUnlessStoppedManually

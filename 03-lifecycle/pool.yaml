@@ -12,7 +12,7 @@ spec:
   virtualMachineTemplate:
     metadata:
       labels:
-        role: demo
+        role: web
       annotations:
         # the ansible group of every replica in `d8 v ansible-inventory`
         provisioning.virtualization.deckhouse.io/groups: pool

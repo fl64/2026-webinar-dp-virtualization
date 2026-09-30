@@ -4,7 +4,7 @@ metadata:
   name: demo-kustomize
   labels:
     vm: demo-kustomize
-    role: demo
+    role: web
 spec:
   virtualMachineClassName: generic
   runPolicy: AlwaysOnUnlessStoppedManually
