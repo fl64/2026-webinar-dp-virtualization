@@ -5,7 +5,7 @@
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualDiskSnapshot
 metadata:
-  name: demo-win-golden
+  name: demo-windows-server-2022-sysprep
   namespace: demo-webinar
 spec:
   virtualDiskName: demo-win-build-root
@@ -15,11 +15,11 @@ spec:
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualDisk
 metadata:
-  name: demo-win-golden
+  name: demo-windows-server-2022-sysprep
   namespace: demo-webinar
 spec:
   dataSource:
     type: ObjectRef
     objectRef:
       kind: VirtualDiskSnapshot
-      name: demo-win-golden
+      name: demo-windows-server-2022-sysprep

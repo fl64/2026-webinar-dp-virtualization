@@ -3,7 +3,7 @@
 apiVersion: ansible.deckhouse.io/v1alpha1
 kind: AnsibleRun
 metadata:
-  name: demo-ansible-vmpool-site
+  name: demo-pool-site
   namespace: demo-webinar
 spec:
   playbook:
@@ -20,7 +20,7 @@ spec:
     virtualMachines:
       selector:
         matchLabels:
-          vmpool.virtualization.deckhouse.io/pool: demo-ansible-vmpool
+          vmpool.virtualization.deckhouse.io/pool: demo-pool
   connection:
     secretRef:
-      name: demo-ansible-vmpool
+      name: demo-pool

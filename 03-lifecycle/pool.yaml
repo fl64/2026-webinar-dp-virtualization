@@ -4,7 +4,7 @@
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualMachinePool
 metadata:
-  name: demo-ansible-vmpool          # replicas are named <pool>-<suffix>
+  name: demo-pool          # replicas are named <pool>-<suffix>
   namespace: demo-webinar
 spec:
   replicas: 3
@@ -93,11 +93,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: demo-ansible-vmpool
+  name: demo-pool
   namespace: demo-webinar
 spec:
   selector:
-    vmpool.virtualization.deckhouse.io/pool: demo-ansible-vmpool
+    vmpool.virtualization.deckhouse.io/pool: demo-pool
   ports:
     - port: 80
 ---
@@ -105,13 +105,13 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: demo-ansible-vmpool
+  name: demo-pool
   namespace: demo-webinar
 spec:
   scaleTargetRef:
     apiVersion: virtualization.deckhouse.io/v1alpha2
     kind: VirtualMachinePool
-    name: demo-ansible-vmpool
+    name: demo-pool
   minReplicas: 3
   maxReplicas: 6
   metrics:
