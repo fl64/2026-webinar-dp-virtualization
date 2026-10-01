@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  demo-helm:
+  - apiVersion: v2
+    appVersion: "1.0"
+    created: "2026-10-01T09:42:15.893217857+03:00"
+    description: Example VM for DVP, released by operator-helm
+    digest: a41148c072b11f7f7abc0bd1840ea08884683c3a2cf744037d371c07d121aef8
+    name: demo-helm
+    type: application
+    urls:
+    - https://fl64.github.io/2026-webinar-dp-virtualization/demo-helm-0.7.2.tgz
+    version: 0.7.2
+generated: "2026-10-01T09:42:15.89296149+03:00"
