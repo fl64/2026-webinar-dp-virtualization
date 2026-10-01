@@ -162,7 +162,7 @@ spec:
       ports:
         - protocol: TCP
           port: 80
-    # SSH from the maintenance runner pods and from virt-api, which carries d8 v port-forward.
+    # SSH from the maintenance runner pods and from the virtualization namespace, which carries d8 v port-forward.
     - from:
         - namespaceSelector:
             matchLabels:
@@ -170,9 +170,6 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: d8-virtualization
-          podSelector:
-            matchLabels:
-              kubevirt.internal.virtualization.deckhouse.io: virt-api
       ports:
         - protocol: TCP
           port: 22

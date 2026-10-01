@@ -90,7 +90,8 @@ spec:
             name: demo-ubuntu-26-04-packer
 ---
 # Same rules as the other web VMs: page on 80 from the project (the rotation check curls the Service
-# from a pod), SSH from the maintenance runner pods and from virt-api, which carries d8 v port-forward.
+# from a pod), SSH from the maintenance runner pods and from the virtualization namespace,
+# which carries d8 v port-forward.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -116,9 +117,6 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: d8-virtualization
-          podSelector:
-            matchLabels:
-              kubevirt.internal.virtualization.deckhouse.io: virt-api
       ports:
         - protocol: TCP
           port: 22

@@ -147,7 +147,7 @@ resource "kubernetes_network_policy_v1" "vm" {
       }
     }
 
-    # SSH from the maintenance runner pods and from virt-api, which carries d8 v port-forward.
+    # SSH from the maintenance runner pods and from the virtualization namespace, which carries d8 v port-forward.
     ingress {
       from {
         namespace_selector {
@@ -157,9 +157,6 @@ resource "kubernetes_network_policy_v1" "vm" {
       from {
         namespace_selector {
           match_labels = { "kubernetes.io/metadata.name" = "d8-virtualization" }
-        }
-        pod_selector {
-          match_labels = { "kubevirt.internal.virtualization.deckhouse.io" = "virt-api" }
         }
       }
       ports {
