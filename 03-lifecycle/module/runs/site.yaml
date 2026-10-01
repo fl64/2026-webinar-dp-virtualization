@@ -11,7 +11,7 @@ spec:
     git:
       url: https://github.com/fl64/2026-webinar-dp-virtualization.git
       revision: main
-      path: 03-lifecycle/playbooks/site.yml
+      path: 03-lifecycle/playbooks/update.yml
     vars:
       - name: updated_by
         value: AnsibleRun
