@@ -6,13 +6,13 @@ resources:
   - clone.yaml
 
 # Every key of a sysprep Secret becomes a file on the provisioning CD, so authorized_keys rides
-# along as a plain file; it is not in git, step 5 of 01-image.md copies the demo key here.
+# along as a plain file; it is not in git, step 5 of 01-image.md copies the demo key into cfg/.
 secretGenerator:
   - name: demo-win
     type: provisioning.virtualization.deckhouse.io/sysprep
     files:
-      - unattend.xml
-      - authorized_keys
+      - cfg/unattend.xml
+      - cfg/authorized_keys
 
 generatorOptions:
   disableNameSuffixHash: true

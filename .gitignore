@@ -7,7 +7,7 @@
 keys/
 
 # copied from keys/demo_ed25519.pub in step 5 of 01-image.md
-01-image/windows/clone/authorized_keys
+01-image/windows/clone/cfg/authorized_keys
 
 # документы публикуются позже отдельно
 *.md
