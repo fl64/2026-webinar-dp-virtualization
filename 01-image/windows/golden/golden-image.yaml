@@ -1,4 +1,19 @@
 ---
+# Applied together with the image: the disk waits for the snapshot, the image waits for the disk.
+# Not an image straight off the snapshot: this platform build refuses to import an image from a
+# snapshot taken by the unified snapshotter, a disk it restores fine.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualDisk
+metadata:
+  name: demo-windows-server-2022-sysprep
+  namespace: demo-webinar
+spec:
+  dataSource:
+    type: ObjectRef
+    objectRef:
+      kind: VirtualDiskSnapshot
+      name: demo-windows-server-2022-sysprep
+---
 # A project image, taken off the disk restored from the snapshot in snapshot.yaml.
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualImage
