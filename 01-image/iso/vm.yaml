@@ -1,8 +1,19 @@
+# Blank disk: no dataSource, the installer partitions it.
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualDisk
+metadata:
+  name: demo-iso-root
+  namespace: demo-webinar
+spec:
+  persistentVolumeClaim:
+    size: 4Gi
+---
 # Order of blockDeviceRefs is the boot order: CD first, then the blank disk.
 apiVersion: virtualization.deckhouse.io/v1alpha2
 kind: VirtualMachine
 metadata:
   name: demo-iso
+  namespace: demo-webinar
   labels:
     vm: demo-iso
 spec:
